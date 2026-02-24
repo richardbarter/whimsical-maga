@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer --version:*)",
+      "Bash(ls:*)",
+      "Bash(npx shadcn-vue@latest add:*)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "laravel-boost",
+    "herd"
+  ]
+}
