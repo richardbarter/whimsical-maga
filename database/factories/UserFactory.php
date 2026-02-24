@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -29,6 +30,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role_id' => Role::firstOrCreate(['name' => 'user'], ['description' => 'Can submit quotes and view own submissions'])->id,
         ];
     }
 
@@ -39,6 +41,26 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Assign the admin role to the user.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => Role::firstOrCreate(['name' => 'admin'], ['description' => 'Full access to all features and settings'])->id,
+        ]);
+    }
+
+    /**
+     * Assign the regular user role to the user.
+     */
+    public function asUser(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => Role::firstOrCreate(['name' => 'user'], ['description' => 'Can submit quotes and view own submissions'])->id,
         ]);
     }
 }

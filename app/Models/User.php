@@ -88,4 +88,14 @@ class User extends Authenticatable
     {
         return $this->role->name === $role;
     }
+
+    /**
+     * Get the intended redirect path after authentication based on role.
+     */
+    public function redirectPath(): string
+    {
+        return $this->isAdmin()
+            ? route('admin.dashboard', absolute: false)
+            : route('home', absolute: false);
+    }
 }
