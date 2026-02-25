@@ -228,6 +228,7 @@ class QuoteTest extends TestCase
         $this->assertTrue($quote->categories->contains($category));
         $this->assertCount(1, $quote->sources);
         $this->assertEquals('https://example.com', $quote->sources->first()->url);
+        $this->assertTrue($quote->sources->first()->is_primary);
     }
 
     public function test_store_can_create_new_tags_by_name(): void
@@ -357,6 +358,27 @@ class QuoteTest extends TestCase
             ->put(route('admin.quotes.update', $quote), []);
 
         $response->assertSessionHasErrors(['text', 'speaker', 'status', 'quote_type']);
+    }
+
+    public function test_update_syncs_sources_with_is_primary(): void
+    {
+        $quote = Quote::factory()->create();
+
+        $this->actingAs($this->admin)->put(
+            route('admin.quotes.update', $quote),
+            $this->validPayload([
+                'text' => $quote->text,
+                'sources' => [
+                    ['url' => 'https://primary.com', 'title' => 'Primary', 'source_type' => 'article', 'is_primary' => true, 'archived_url' => ''],
+                    ['url' => 'https://secondary.com', 'title' => 'Secondary', 'source_type' => 'article', 'is_primary' => false, 'archived_url' => ''],
+                ],
+            ])
+        );
+
+        $sources = $quote->fresh()->sources;
+        $this->assertCount(2, $sources);
+        $this->assertTrue($sources->firstWhere('url', 'https://primary.com')->is_primary);
+        $this->assertFalse($sources->firstWhere('url', 'https://secondary.com')->is_primary);
     }
 
     // -------------------------------------------------------------------------
