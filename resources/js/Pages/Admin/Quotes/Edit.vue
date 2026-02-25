@@ -29,7 +29,7 @@ const form = useForm({
     quote_type_note: props.quote.quote_type_note ?? '',
     context: props.quote.context ?? '',
     location: props.quote.location ?? '',
-    occurred_at: props.quote.occurred_at ?? '',
+    occurred_at: props.quote.occurred_at ? props.quote.occurred_at.substring(0, 10) : '',
     is_verified: props.quote.is_verified,
     is_featured: props.quote.is_featured,
     status: props.quote.status,
