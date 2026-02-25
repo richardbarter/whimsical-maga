@@ -107,8 +107,8 @@ const sourceTypes = [
             <div class="flex items-center gap-2">
                 <Switch
                     :id="`source-primary-${index}`"
-                    :checked="source.is_primary"
-                    @update:checked="update('is_primary', $event)"
+                    :model-value="source.is_primary"
+                    @update:model-value="update('is_primary', $event)"
                 />
                 <Label :for="`source-primary-${index}`">Primary source</Label>
             </div>
