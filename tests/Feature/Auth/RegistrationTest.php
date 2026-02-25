@@ -14,6 +14,7 @@ class RegistrationTest extends TestCase
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
+        app('cache')->store()->flush();
     }
 
     public function test_registration_screen_can_be_rendered(): void
@@ -34,5 +35,26 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('home', absolute: false));
+    }
+
+    public function test_registration_is_rate_limited(): void
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $this->post('/register', [
+                'name' => 'Test User',
+                'email' => "user{$i}@example.com",
+                'password' => 'password',
+                'password_confirmation' => 'password',
+            ]);
+        }
+
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'email' => 'final@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertStatus(429);
     }
 }
