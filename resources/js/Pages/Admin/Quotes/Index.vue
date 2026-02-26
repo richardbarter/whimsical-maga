@@ -79,12 +79,13 @@ function executeDelete() {
                                 <TableHead>Status</TableHead>
                                 <TableHead class="text-center">Verified</TableHead>
                                 <TableHead class="text-center">Featured</TableHead>
-                                <TableHead>Date</TableHead>
+                                <TableHead>Occurred At</TableHead>
+                                <TableHead>Created</TableHead>
                                 <TableHead class="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableEmpty v-if="!quotes.data.length" :colspan="7">
+                            <TableEmpty v-if="!quotes.data.length" :colspan="8">
                                 No quotes yet. <Link :href="route('admin.quotes.create')" class="underline">Add the first one.</Link>
                             </TableEmpty>
 

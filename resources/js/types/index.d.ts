@@ -77,6 +77,22 @@ export interface SourceForm {
     archived_url: string;
 }
 
+export interface QuoteFormData {
+    text: string;
+    speaker: string;
+    quote_type: string;
+    quote_type_note: string;
+    context: string;
+    location: string;
+    occurred_at: string;
+    is_verified: boolean;
+    is_featured: boolean;
+    status: 'published' | 'draft' | 'pending';
+    tags: string[];
+    categories: string[];
+    sources: SourceForm[];
+}
+
 export interface PaginatedData<T> {
     data: T[];
     current_page: number;

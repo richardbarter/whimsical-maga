@@ -2,6 +2,7 @@
 import type { Quote } from '@/types';
 import { router } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
+import { formatDate } from '@/lib/utils';
 import { Button } from '@/Components/ui/button';
 import { Badge } from '@/Components/ui/badge';
 import { TableRow, TableCell } from '@/Components/ui/table';
@@ -35,9 +36,6 @@ function toggleFeature() {
     router.patch(route('admin.quotes.feature', props.quote.id), {}, { preserveScroll: true });
 }
 
-function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
 </script>
 
 <template>
@@ -75,6 +73,9 @@ function formatDate(dateStr: string): string {
         <TableCell class="text-center">
             <Check v-if="quote.is_featured" class="mx-auto h-4 w-4 text-green-600" />
             <Minus v-else class="mx-auto h-4 w-4 text-muted-foreground" />
+        </TableCell>
+        <TableCell class="text-sm text-gray-600">
+            {{ quote.occurred_at ? formatDate(quote.occurred_at) : '—' }}
         </TableCell>
         <TableCell class="text-sm text-gray-600">
             {{ formatDate(quote.created_at) }}
