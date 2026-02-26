@@ -102,6 +102,9 @@ const sourceTypes = [
                     type="url"
                     placeholder="https://web.archive.org/..."
                 />
+                <p v-if="errors[`sources.${index}.archived_url`]" class="text-sm text-destructive">
+                    {{ errors[`sources.${index}.archived_url`] }}
+                </p>
             </div>
 
             <div class="flex items-center gap-2">
