@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Quote;
 use App\Models\Speaker;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Quote>
@@ -24,7 +24,7 @@ class QuoteFactory extends Factory
         return [
             'text' => $text,
             'speaker_id' => Speaker::factory(),
-            'slug' => Str::slug(implode(' ', array_slice(explode(' ', $text), 0, 8))),
+            'slug' => Quote::generateSlug($text),
             'status' => 'draft',
             'quote_type' => 'spoken',
             'is_verified' => false,
