@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\QuoteObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -114,7 +115,7 @@ class Quote extends Model
     /**
      * Scope to get only published quotes.
      */
-    public function scopePublished($query)
+    public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', 'published');
     }
@@ -122,7 +123,7 @@ class Quote extends Model
     /**
      * Scope to get only featured quotes.
      */
-    public function scopeFeatured($query)
+    public function scopeFeatured(Builder $query): Builder
     {
         return $query->where('is_featured', true);
     }
