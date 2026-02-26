@@ -274,13 +274,36 @@ class QuoteTest extends TestCase
         $response->assertSessionHasErrors(['sources.0.url']);
     }
 
+    public function test_store_validation_fails_with_invalid_source_archived_url(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'sources' => [['url' => 'https://example.com', 'title' => null, 'source_type' => null, 'is_primary' => false, 'archived_url' => 'not-a-url']],
+        ]));
+
+        $response->assertSessionHasErrors(['sources.0.archived_url']);
+    }
+
+    public function test_store_can_create_new_categories_by_name(): void
+    {
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'categories' => ['brand-new-category'],
+        ]));
+
+        $this->assertDatabaseHas('categories', ['name' => 'brand-new-category']);
+        $this->assertCount(1, Quote::first()->categories);
+    }
+
     // -------------------------------------------------------------------------
     // Edit
     // -------------------------------------------------------------------------
 
     public function test_admin_can_view_edit_form_with_quote_data(): void
     {
+        $tag = Tag::factory()->create();
+        $category = Category::factory()->create();
         $quote = Quote::factory()->create();
+        $quote->tags()->attach($tag);
+        $quote->categories()->attach($category);
 
         $response = $this->actingAs($this->admin)->get(route('admin.quotes.edit', $quote));
 
@@ -289,6 +312,13 @@ class QuoteTest extends TestCase
             ->component('Admin/Quotes/Edit')
             ->has('quote')
             ->where('quote.id', $quote->id)
+            ->has('quote.speaker')
+            ->has('quote.tags', 1)
+            ->has('quote.categories', 1)
+            ->has('quote.sources')
+            ->has('tags')
+            ->has('categories')
+            ->has('speakers')
         );
     }
 
