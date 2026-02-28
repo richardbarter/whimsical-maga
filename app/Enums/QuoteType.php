@@ -22,4 +22,15 @@ enum QuoteType: string
             QuoteType::Other => 'Other',
         };
     }
+
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
+    public static function options(): array
+    {
+        return collect(self::cases())->map(fn (self $type) => [
+            'value' => $type->value,
+            'label' => $type->label(),
+        ])->all();
+    }
 }

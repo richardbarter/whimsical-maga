@@ -40,10 +40,7 @@ class QuoteController extends Controller
             'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
             'categories' => Category::orderBy('name')->get(['id', 'name', 'slug', 'color']),
             'speakers' => Speaker::with('aliases')->orderBy('name')->get(['id', 'name', 'slug']),
-            'quoteTypes' => collect(QuoteType::cases())->map(fn (QuoteType $type) => [
-                'value' => $type->value,
-                'label' => $type->label(),
-            ]),
+            'quoteTypes' => QuoteType::options(),
         ]);
     }
 
@@ -91,10 +88,7 @@ class QuoteController extends Controller
             'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
             'categories' => Category::orderBy('name')->get(['id', 'name', 'slug', 'color']),
             'speakers' => Speaker::with('aliases')->orderBy('name')->get(['id', 'name', 'slug']),
-            'quoteTypes' => collect(QuoteType::cases())->map(fn (QuoteType $type) => [
-                'value' => $type->value,
-                'label' => $type->label(),
-            ]),
+            'quoteTypes' => QuoteType::options(),
         ]);
     }
 

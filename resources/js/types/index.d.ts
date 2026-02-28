@@ -70,7 +70,7 @@ export interface Quote {
 }
 
 export interface QuoteTypeOption {
-    value: string;
+    value: 'spoken' | 'written' | 'testimony' | 'alleged' | 'paraphrased' | 'other';
     label: string;
 }
 
