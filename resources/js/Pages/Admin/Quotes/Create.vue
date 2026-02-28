@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Tag, Category, Speaker } from '@/types';
+import type { Tag, Category, Speaker, QuoteTypeOption } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import QuoteForm from './components/QuoteForm.vue';
@@ -8,6 +8,7 @@ defineProps<{
     tags: Tag[];
     categories: Category[];
     speakers: Speaker[];
+    quoteTypes: QuoteTypeOption[];
 }>();
 </script>
 
@@ -35,6 +36,7 @@ defineProps<{
                     :tags="tags"
                     :categories="categories"
                     :speakers="speakers"
+                    :quote-types="quoteTypes"
                     submit-label="Create Quote"
                     submit-method="post"
                     :submit-route="route('admin.quotes.store')"

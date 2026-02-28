@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\QuoteType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\QuoteRequest;
 use App\Models\Category;
@@ -39,6 +40,10 @@ class QuoteController extends Controller
             'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
             'categories' => Category::orderBy('name')->get(['id', 'name', 'slug', 'color']),
             'speakers' => Speaker::with('aliases')->orderBy('name')->get(['id', 'name', 'slug']),
+            'quoteTypes' => collect(QuoteType::cases())->map(fn (QuoteType $type) => [
+                'value' => $type->value,
+                'label' => $type->label(),
+            ]),
         ]);
     }
 
@@ -86,6 +91,10 @@ class QuoteController extends Controller
             'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
             'categories' => Category::orderBy('name')->get(['id', 'name', 'slug', 'color']),
             'speakers' => Speaker::with('aliases')->orderBy('name')->get(['id', 'name', 'slug']),
+            'quoteTypes' => collect(QuoteType::cases())->map(fn (QuoteType $type) => [
+                'value' => $type->value,
+                'label' => $type->label(),
+            ]),
         ]);
     }
 

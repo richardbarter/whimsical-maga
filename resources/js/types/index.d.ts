@@ -69,7 +69,13 @@ export interface Quote {
     updated_at: string;
 }
 
+export interface QuoteTypeOption {
+    value: string;
+    label: string;
+}
+
 export interface SourceForm {
+    _key: string;
     url: string;
     title: string;
     source_type: string;

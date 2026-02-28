@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Tag, Category, Speaker, Quote, QuoteFormData } from '@/types';
+import type { Tag, Category, Speaker, Quote, QuoteFormData, QuoteTypeOption } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { formatDate } from '@/lib/utils';
@@ -10,6 +10,7 @@ const props = defineProps<{
     tags: Tag[];
     categories: Category[];
     speakers: Speaker[];
+    quoteTypes: QuoteTypeOption[];
 }>();
 
 const initialValues: QuoteFormData = {
@@ -26,6 +27,7 @@ const initialValues: QuoteFormData = {
     tags: (props.quote.tags ?? []).map(t => String(t.id)),
     categories: (props.quote.categories ?? []).map(c => String(c.id)),
     sources: (props.quote.sources ?? []).map(s => ({
+        _key: crypto.randomUUID(),
         url: s.url,
         title: s.title ?? '',
         source_type: s.source_type ?? '',
@@ -60,6 +62,7 @@ const initialValues: QuoteFormData = {
                     :tags="tags"
                     :categories="categories"
                     :speakers="speakers"
+                    :quote-types="quoteTypes"
                     :initial-values="initialValues"
                     submit-label="Update Quote"
                     submit-method="put"
