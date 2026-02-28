@@ -113,6 +113,7 @@ class QuoteTest extends TestCase
             ->has('tags', 2)
             ->has('categories', 2)
             ->has('speakers', 2)
+            ->has('quoteTypes', 6)
         );
     }
 
@@ -319,6 +320,7 @@ class QuoteTest extends TestCase
             ->has('tags')
             ->has('categories')
             ->has('speakers')
+            ->has('quoteTypes', 6)
         );
     }
 

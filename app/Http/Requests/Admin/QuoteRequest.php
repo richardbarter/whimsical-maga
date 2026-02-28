@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\QuoteType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class QuoteRequest extends FormRequest
 {
@@ -25,7 +27,7 @@ class QuoteRequest extends FormRequest
             'is_verified' => ['boolean'],
             'is_featured' => ['boolean'],
             'status' => ['required', 'in:published,draft,pending'],
-            'quote_type' => ['required', 'string', 'in:spoken,written,testimony,alleged,paraphrased,other'],
+            'quote_type' => ['required', 'string', Rule::enum(QuoteType::class)],
             'quote_type_note' => ['nullable', 'string', 'max:255'],
 
             'tags' => ['nullable', 'array'],
