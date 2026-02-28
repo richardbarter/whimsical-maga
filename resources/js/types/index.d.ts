@@ -69,7 +69,26 @@ export interface Quote {
     updated_at: string;
 }
 
+export interface Background {
+    id: number;
+    file_path: string;
+    alt_text?: string;
+    title?: string;
+    description?: string;
+    credit?: string;
+    file_size?: number;
+    dimensions?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface QuoteTypeOption {
+    value: string;
+    label: string;
+}
+
 export interface SourceForm {
+    _key: string;
     url: string;
     title: string;
     source_type: string;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Tag, Category, Speaker, SourceForm, Quote } from '@/types';
+import type { Tag, Category, Speaker, SourceForm, Quote, QuoteTypeOption } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { DatePicker } from '@/Components/ui/date-picker';
@@ -20,6 +20,7 @@ const props = defineProps<{
     tags: Tag[];
     categories: Category[];
     speakers: Speaker[];
+    quoteTypes: QuoteTypeOption[];
 }>();
 
 const form = useForm({
@@ -36,6 +37,7 @@ const form = useForm({
     tags: (props.quote.tags ?? []).map(t => String(t.id)),
     categories: (props.quote.categories ?? []).map(c => String(c.id)),
     sources: (props.quote.sources ?? []).map(s => ({
+        _key: crypto.randomUUID(),
         url: s.url,
         title: s.title ?? '',
         source_type: s.source_type ?? '',
@@ -46,6 +48,7 @@ const form = useForm({
 
 function addSource() {
     form.sources.push({
+        _key: crypto.randomUUID(),
         url: '',
         title: '',
         source_type: '',
@@ -121,12 +124,13 @@ function formatDate(dateStr: string): string {
                                         <SelectValue placeholder="How was this quote delivered?" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="spoken">Spoken</SelectItem>
-                                        <SelectItem value="written">Written</SelectItem>
-                                        <SelectItem value="testimony">Testimony (under oath)</SelectItem>
-                                        <SelectItem value="alleged">Alleged</SelectItem>
-                                        <SelectItem value="paraphrased">Paraphrased</SelectItem>
-                                        <SelectItem value="other">Other</SelectItem>
+                                        <SelectItem
+                                            v-for="type in quoteTypes"
+                                            :key="type.value"
+                                            :value="type.value"
+                                        >
+                                            {{ type.label }}
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <p v-if="form.errors.quote_type" class="text-sm text-destructive">{{ form.errors.quote_type }}</p>
@@ -264,7 +268,7 @@ function formatDate(dateStr: string): string {
 
                             <SourceFormRow
                                 v-for="(source, index) in form.sources"
-                                :key="index"
+                                :key="source._key"
                                 v-model:source="form.sources[index]"
                                 :index="index"
                                 :errors="(form.errors as Record<string, string>)"

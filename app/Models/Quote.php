@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\QuoteType;
 use App\Observers\QuoteObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -41,6 +42,7 @@ class Quote extends Model
             'is_verified' => 'boolean',
             'is_featured' => 'boolean',
             'view_count' => 'integer',
+            'quote_type' => QuoteType::class,
         ];
     }
 

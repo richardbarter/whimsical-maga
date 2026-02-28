@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Tag, Category, Speaker, SourceForm } from '@/types';
+import type { Tag, Category, Speaker, SourceForm, QuoteTypeOption } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { DatePicker } from '@/Components/ui/date-picker';
@@ -19,6 +19,7 @@ defineProps<{
     tags: Tag[];
     categories: Category[];
     speakers: Speaker[];
+    quoteTypes: QuoteTypeOption[];
 }>();
 
 const form = useForm({
@@ -39,6 +40,7 @@ const form = useForm({
 
 function addSource() {
     form.sources.push({
+        _key: crypto.randomUUID(),
         url: '',
         title: '',
         source_type: '',
@@ -110,12 +112,13 @@ function submit() {
                                         <SelectValue placeholder="How was this quote delivered?" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="spoken">Spoken</SelectItem>
-                                        <SelectItem value="written">Written</SelectItem>
-                                        <SelectItem value="testimony">Testimony (under oath)</SelectItem>
-                                        <SelectItem value="alleged">Alleged</SelectItem>
-                                        <SelectItem value="paraphrased">Paraphrased</SelectItem>
-                                        <SelectItem value="other">Other</SelectItem>
+                                        <SelectItem
+                                            v-for="type in quoteTypes"
+                                            :key="type.value"
+                                            :value="type.value"
+                                        >
+                                            {{ type.label }}
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <p v-if="form.errors.quote_type" class="text-sm text-destructive">{{ form.errors.quote_type }}</p>
@@ -253,7 +256,7 @@ function submit() {
 
                             <SourceFormRow
                                 v-for="(source, index) in form.sources"
-                                :key="index"
+                                :key="source._key"
                                 v-model:source="form.sources[index]"
                                 :index="index"
                                 :errors="(form.errors as Record<string, string>)"

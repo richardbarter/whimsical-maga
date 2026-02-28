@@ -45,6 +45,7 @@ This is a Laravel 12 + Inertia.js + Vue 3 + TypeScript application for managing 
 - **Types**: TypeScript interfaces in `resources/js/types/index.d.ts`
 - **Routing**: Ziggy provides Laravel routes to Vue via `route()` helper
 - **Props down, events up**: Pass data to children via props, communicate back via emits. Never mutate props directly.
+- **`v-for` keys**: Never use array index as `:key`. Use a stable identifier — prefer the item's database `id` when iterating server-loaded records. For client-side-only arrays (e.g. form rows added before saving), generate a key with `crypto.randomUUID()` at push time and store it as a `_key` field on the object. Add `_key: string` to the relevant TypeScript interface.
 - **Composables**: Extract reusable reactive logic into `composables/` functions (e.g. `useQuoteFilters()`)
 - **State management (Pinia)**: Use Pinia when local `ref`/`reactive` and props/emits are insufficient. Good candidates: state shared across unrelated components with no common parent, state that must survive page navigation, UI-only state (sidebar, theme, notifications), and optimistic updates with rollback. Inertia page props and shared data handle most server-driven state — don't reach for Pinia when Inertia already covers it. Stores go in `resources/js/stores/`.
 

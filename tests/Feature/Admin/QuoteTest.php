@@ -113,6 +113,7 @@ class QuoteTest extends TestCase
             ->has('tags', 2)
             ->has('categories', 2)
             ->has('speakers', 2)
+            ->has('quoteTypes', 6)
         );
     }
 
@@ -289,6 +290,7 @@ class QuoteTest extends TestCase
             ->component('Admin/Quotes/Edit')
             ->has('quote')
             ->where('quote.id', $quote->id)
+            ->has('quoteTypes', 6)
         );
     }
 
