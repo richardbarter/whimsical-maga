@@ -69,9 +69,29 @@ export interface Quote {
     updated_at: string;
 }
 
+export interface Background {
+    id: number;
+    file_path: string;
+    url: string;
+    alt_text?: string;
+    title?: string;
+    description?: string;
+    credit?: string;
+    source_url?: string;
+    file_size?: number;
+    dimensions?: string;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface QuoteTypeOption {
     value: 'spoken' | 'written' | 'testimony' | 'alleged' | 'paraphrased' | 'other';
     label: string;
+}
+
+export interface ComboboxItem {
+    id: number | null;
+    name: string;
 }
 
 export interface SourceForm {
@@ -94,8 +114,8 @@ export interface QuoteFormData {
     is_verified: boolean;
     is_featured: boolean;
     status: 'published' | 'draft' | 'pending';
-    tags: string[];
-    categories: string[];
+    tags: ComboboxItem[];
+    categories: ComboboxItem[];
     sources: SourceForm[];
 }
 

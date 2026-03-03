@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\BackgroundController;
 use App\Http\Controllers\Admin\QuoteController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Support\Facades\Route;
@@ -12,9 +14,7 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return Inertia::render('Public/Home');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 /*
 |--------------------------------------------------------------------------
@@ -50,14 +50,13 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('ad
     Route::patch('/quotes/{quote}/verify', [QuoteController::class, 'toggleVerified'])->name('quotes.verify');
     Route::patch('/quotes/{quote}/feature', [QuoteController::class, 'toggleFeature'])->name('quotes.feature');
 
-    // Backgrounds (placeholder routes)
-    Route::get('/backgrounds', function () {
-        return Inertia::render('Admin/Backgrounds/Index');
-    })->name('backgrounds.index');
-
-    Route::get('/backgrounds/create', function () {
-        return Inertia::render('Admin/Backgrounds/Index');
-    })->name('backgrounds.create');
+    // Backgrounds
+    Route::get('/backgrounds', [BackgroundController::class, 'index'])->name('backgrounds.index');
+    Route::get('/backgrounds/create', [BackgroundController::class, 'create'])->name('backgrounds.create');
+    Route::post('/backgrounds', [BackgroundController::class, 'store'])->name('backgrounds.store');
+    Route::get('/backgrounds/{background}/edit', [BackgroundController::class, 'edit'])->name('backgrounds.edit');
+    Route::put('/backgrounds/{background}', [BackgroundController::class, 'update'])->name('backgrounds.update');
+    Route::delete('/backgrounds/{background}', [BackgroundController::class, 'destroy'])->name('backgrounds.destroy');
 
     // Tags (placeholder routes)
     Route::get('/tags', function () {
