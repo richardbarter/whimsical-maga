@@ -24,8 +24,8 @@ const initialValues: QuoteFormData = {
     is_verified: props.quote.is_verified,
     is_featured: props.quote.is_featured,
     status: props.quote.status,
-    tags: (props.quote.tags ?? []).map(t => String(t.id)),
-    categories: (props.quote.categories ?? []).map(c => String(c.id)),
+    tags: (props.quote.tags ?? []).map(t => ({ id: t.id, name: t.name })),
+    categories: (props.quote.categories ?? []).map(c => ({ id: c.id, name: c.name })),
     sources: (props.quote.sources ?? []).map(s => ({
         _key: crypto.randomUUID(),
         url: s.url,

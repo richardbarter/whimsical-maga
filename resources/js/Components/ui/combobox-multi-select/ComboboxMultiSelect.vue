@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
+import type { ComboboxItem } from '@/types'
 import { Button } from '@/Components/ui/button'
 import { Input } from '@/Components/ui/input'
 import { Badge } from '@/Components/ui/badge'
@@ -13,8 +14,9 @@ export interface ComboboxOption {
     name: string
 }
 
+const modelValue = defineModel<ComboboxItem[]>({ required: true })
+
 const props = withDefaults(defineProps<{
-    modelValue: string[]
     options: ComboboxOption[]
     placeholder?: string
     searchPlaceholder?: string
@@ -27,82 +29,62 @@ const props = withDefaults(defineProps<{
     error: '',
 })
 
-const emit = defineEmits<{
-    'update:modelValue': [value: string[]]
-}>()
-
 const open = ref(false)
 const newItemInput = ref('')
 
-function isNumericString(val: string): boolean {
-    return /^\d+$/.test(val)
+function isSelected(option: ComboboxOption): boolean {
+    return modelValue.value.some(item => item.id === option.id)
 }
 
-const selectedLabels = computed(() => {
-    return props.modelValue.map(val => {
-        if (isNumericString(val)) {
-            const option = props.options.find(o => o.id === Number(val))
-            return option?.name ?? val
-        }
-        return val
-    })
-})
-
-function isSelected(id: number): boolean {
-    return props.modelValue.includes(String(id))
-}
-
-function toggle(id: number) {
-    const idStr = String(id)
-    const current = [...props.modelValue]
-    const index = current.indexOf(idStr)
+function toggle(option: ComboboxOption): void {
+    const current = [...modelValue.value]
+    const index = current.findIndex(item => item.id === option.id)
     if (index === -1) {
-        current.push(idStr)
+        current.push({ id: option.id, name: option.name })
     } else {
         current.splice(index, 1)
     }
-    emit('update:modelValue', current)
+    modelValue.value = current
 }
 
-function addNew() {
+function addNew(): void {
     const name = newItemInput.value.trim()
-    if (!name) return
+    if (!name) { return }
 
-    const current = [...props.modelValue]
+    const current = [...modelValue.value]
     const existing = props.options.find(o => o.name.toLowerCase() === name.toLowerCase())
 
     if (existing) {
-        const id = String(existing.id)
-        if (!current.includes(id)) {
-            current.push(id)
-            emit('update:modelValue', current)
+        if (!current.some(item => item.id === existing.id)) {
+            current.push({ id: existing.id, name: existing.name })
+            modelValue.value = current
         }
-    } else if (!current.includes(name)) {
-        current.push(name)
-        emit('update:modelValue', current)
+    } else if (!current.some(item => item.name.toLowerCase() === name.toLowerCase())) {
+        current.push({ id: null, name })
+        modelValue.value = current
     }
 
     newItemInput.value = ''
 }
 
-function remove(index: number) {
-    const current = [...props.modelValue]
+function remove(index: number): void {
+    const current = [...modelValue.value]
     current.splice(index, 1)
-    emit('update:modelValue', current)
+    modelValue.value = current
 }
 </script>
 
 <template>
     <div class="space-y-3">
-        <div v-if="modelValue.length" class="flex flex-wrap gap-2">
+        <div v-if="modelValue.length > 0" class="flex flex-wrap gap-2">
             <Badge
-                v-for="(label, index) in selectedLabels"
-                :key="index"
+                v-for="(item, index) in modelValue"
+                :key="item.id ?? item.name"
                 variant="secondary"
                 class="cursor-pointer"
                 @click="remove(index)"
             >
-                {{ label }}
+                {{ item.name }}
                 <span class="ml-1">&times;</span>
             </Badge>
         </div>
@@ -126,11 +108,11 @@ function remove(index: number) {
                                 v-for="option in options"
                                 :key="option.id"
                                 :value="option.name"
-                                @select="toggle(option.id)"
+                                @select="toggle(option)"
                             >
                                 <Check
                                     class="mr-2 h-4 w-4"
-                                    :class="isSelected(option.id) ? 'opacity-100' : 'opacity-0'"
+                                    :class="isSelected(option) ? 'opacity-100' : 'opacity-0'"
                                 />
                                 {{ option.name }}
                             </CommandItem>
