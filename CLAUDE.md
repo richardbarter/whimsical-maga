@@ -46,6 +46,15 @@ This is a Laravel 12 + Inertia.js + Vue 3 + TypeScript application for managing 
 - **Routing**: Ziggy provides Laravel routes to Vue via `route()` helper
 - **Props down, events up**: Pass data to children via props, communicate back via emits. Never mutate props directly.
 - **Composables**: Extract reusable reactive logic into `composables/` functions (e.g. `useQuoteFilters()`)
+- **`<script setup>` ordering**: Follow this order in all Vue components (this is the standard Vue 3 convention):
+  1. Imports
+  2. Types & interfaces
+  3. Constants (static values)
+  4. Reactive state (`ref`, `reactive`, `computed`, `usePage`, etc.)
+  5. Functions & methods
+  6. Watchers (`watch`, `watchEffect`)
+  7. Lifecycle hooks (`onMounted`, `onUnmounted`)
+  8. Side effects (`router.on(...)`, etc.)
 - **State management (Pinia)**: Use Pinia when local `ref`/`reactive` and props/emits are insufficient. Good candidates: state shared across unrelated components with no common parent, state that must survive page navigation, UI-only state (sidebar, theme, notifications), and optimistic updates with rollback. Inertia page props and shared data handle most server-driven state — don't reach for Pinia when Inertia already covers it. Stores go in `resources/js/stores/`.
 
 ### Route Groups
