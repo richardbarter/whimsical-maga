@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import Checkbox from '@/Components/Checkbox.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import Input from '@/Components/ui/input/Input.vue';
+import Button from '@/Components/ui/button/Button.vue';
+import Checkbox from '@/Components/Checkbox.vue';
+import FormField from '@/Components/ui/form-field/FormField.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 defineProps<{
@@ -29,69 +28,51 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Log in" />
+        <Head title="Admin Login" />
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
+        <p v-if="status" class="mb-4 text-sm font-medium text-primary">
             {{ status }}
-        </div>
+        </p>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
+        <form @submit.prevent="submit" class="space-y-5">
+            <FormField label="Email" for="email" :error="form.errors.email">
+                <Input
                     id="email"
                     type="email"
-                    class="mt-1 block w-full"
                     v-model="form.email"
                     required
                     autofocus
                     autocomplete="username"
                 />
+            </FormField>
 
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
+            <FormField label="Password" for="password" :error="form.errors.password">
+                <Input
                     id="password"
                     type="password"
-                    class="mt-1 block w-full"
                     v-model="form.password"
                     required
                     autocomplete="current-password"
                 />
+            </FormField>
 
-                <InputError class="mt-2" :message="form.errors.password" />
+            <div class="flex items-center gap-2">
+                <Checkbox name="remember" v-model:checked="form.remember" />
+                <span class="text-sm text-muted-foreground">Remember me</span>
             </div>
 
-            <div class="mt-4 block">
-                <label class="flex items-center">
-                    <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="ms-2 text-sm text-gray-600"
-                        >Remember me</span
-                    >
-                </label>
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
+            <div class="flex items-center justify-between pt-1">
                 <Link
                     v-if="canResetPassword"
                     :href="route('password.request')"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    class="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
                 >
                     Forgot your password?
                 </Link>
 
-                <PrimaryButton
-                    class="ms-4"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Log in
-                </PrimaryButton>
+                <Button type="submit" :disabled="form.processing" class="ms-auto">
+                    {{ form.processing ? 'Signing in…' : 'Sign in' }}
+                </Button>
             </div>
         </form>
     </GuestLayout>

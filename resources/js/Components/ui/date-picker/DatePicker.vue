@@ -7,23 +7,19 @@ import { Calendar } from '@/Components/ui/calendar'
 import { Button } from '@/Components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover'
 
+const model = defineModel<string>({ default: '' })
+
 const props = withDefaults(defineProps<{
-  modelValue?: string
   placeholder?: string
 }>(), {
-  modelValue: '',
   placeholder: 'Pick a date',
 })
-
-const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
 
 const open = ref(false)
 
 const calendarDate = computed<DateValue | undefined>(() => {
-  if (!props.modelValue) return undefined
-  const [year, month, day] = props.modelValue.split('-').map(Number)
+  if (!model.value) return undefined
+  const [year, month, day] = model.value.split('-').map(Number)
   if (!year || !month || !day) return undefined
   return new CalendarDate(year, month, day)
 })
@@ -36,7 +32,7 @@ const formattedDate = computed(() => {
 function onDateSelect(date: DateValue | undefined) {
   if (!date) return
   const iso = `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`
-  emit('update:modelValue', iso)
+  model.value = iso
   open.value = false
 }
 </script>

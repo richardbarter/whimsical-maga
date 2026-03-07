@@ -1,21 +1,17 @@
 <script setup lang="ts">
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import { Link } from '@inertiajs/vue3';
 </script>
 
 <template>
-    <div
-        class="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0"
-    >
-        <div>
-            <Link href="/">
-                <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
+    <div class="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
+        <div class="mb-8 text-center">
+            <Link href="/" class="text-3xl font-bold text-primary">
+                Whimsical MAGA
             </Link>
+            <p class="mt-1 text-sm text-muted-foreground">Admin Portal</p>
         </div>
 
-        <div
-            class="mt-6 w-full overflow-hidden bg-white px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg"
-        >
+        <div class="w-full max-w-md rounded-xl bg-card px-8 py-8 shadow-lg">
             <slot />
         </div>
     </div>
