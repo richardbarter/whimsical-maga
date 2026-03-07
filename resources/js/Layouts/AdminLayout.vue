@@ -1,260 +1,211 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { usePage } from '@inertiajs/vue3';
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import Dropdown from '@/Components/Dropdown.vue';
-import DropdownLink from '@/Components/DropdownLink.vue';
-import NavLink from '@/Components/NavLink.vue';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import Button from '@/Components/ui/button/Button.vue';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/Components/ui/dropdown-menu';
+import { ChevronDown, LogOut, Menu, User, X } from 'lucide-vue-next';
 import type { PageProps } from '@/types';
 
-const showingNavigationDropdown = ref(false);
+interface NavLink {
+    label: string;
+    routeName: string;
+    pattern: string;
+}
 
+const FLASH_DURATION_MS = 4000;
+
+const navLinks: NavLink[] = [
+    { label: 'Dashboard', routeName: 'admin.dashboard', pattern: 'admin.dashboard' },
+    { label: 'Quotes', routeName: 'admin.quotes.index', pattern: 'admin.quotes.*' },
+    { label: 'Backgrounds', routeName: 'admin.backgrounds.index', pattern: 'admin.backgrounds.*' },
+    { label: 'Tags', routeName: 'admin.tags.index', pattern: 'admin.tags.*' },
+    { label: 'Categories', routeName: 'admin.categories.index', pattern: 'admin.categories.*' },
+];
+
+const showingNavigationDropdown = ref(false);
 const page = usePage<PageProps>();
 const flash = ref<{ success?: string; error?: string }>({});
+let flashTimeout: ReturnType<typeof setTimeout> | null = null;
 
 watch(
     () => page.props.flash,
     (newFlash) => {
         flash.value = { ...newFlash };
+        if (flashTimeout) clearTimeout(flashTimeout);
         if (newFlash.success || newFlash.error) {
-            setTimeout(() => { flash.value = {}; }, 4000);
+            flashTimeout = setTimeout(() => {
+                flash.value = {};
+            }, FLASH_DURATION_MS);
         }
     },
     { immediate: true },
 );
+
+router.on('navigate', () => { showingNavigationDropdown.value = false; });
 </script>
 
 <template>
-    <div>
-        <div class="min-h-screen bg-gray-100">
-            <nav class="border-b border-gray-100 bg-white">
-                <!-- Primary Navigation Menu -->
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="flex h-16 justify-between">
-                        <div class="flex">
-                            <!-- Logo -->
-                            <div class="flex shrink-0 items-center">
-                                <Link :href="route('admin.dashboard')">
-                                    <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800"
-                                    />
-                                </Link>
-                            </div>
+    <div class="min-h-screen bg-background">
 
-                            <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    :href="route('admin.dashboard')"
-                                    :active="route().current('admin.dashboard')"
-                                >
-                                    Dashboard
-                                </NavLink>
-                                <NavLink
-                                    :href="route('admin.quotes.index')"
-                                    :active="route().current('admin.quotes.*')"
-                                >
-                                    Quotes
-                                </NavLink>
-                                <NavLink
-                                    :href="route('admin.backgrounds.index')"
-                                    :active="route().current('admin.backgrounds.*')"
-                                >
-                                    Backgrounds
-                                </NavLink>
-                                <NavLink
-                                    :href="route('admin.tags.index')"
-                                    :active="route().current('admin.tags.*')"
-                                >
-                                    Tags
-                                </NavLink>
-                                <NavLink
-                                    :href="route('admin.categories.index')"
-                                    :active="route().current('admin.categories.*')"
-                                >
-                                    Categories
-                                </NavLink>
-                            </div>
-                        </div>
+        <!-- Top nav -->
+        <nav class="border-b border-border bg-card">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
 
-                        <div class="hidden sm:ms-6 sm:flex sm:items-center">
-                            <!-- Settings Dropdown -->
-                            <div class="relative ms-3">
-                                <Dropdown align="right" width="48">
-                                    <template #trigger>
-                                        <span class="inline-flex rounded-md">
-                                            <button
-                                                type="button"
-                                                class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
-                                            >
-                                                {{ $page.props.auth.user.name }}
-
-                                                <svg
-                                                    class="-me-0.5 ms-2 h-4 w-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                >
-                                                    <path
-                                                        fill-rule="evenodd"
-                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                        clip-rule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </template>
-
-                                    <template #content>
-                                        <DropdownLink :href="route('profile.edit')">
-                                            Profile
-                                        </DropdownLink>
-                                        <DropdownLink
-                                            :href="route('logout')"
-                                            method="post"
-                                            as="button"
-                                        >
-                                            Log Out
-                                        </DropdownLink>
-                                    </template>
-                                </Dropdown>
-                            </div>
-                        </div>
-
-                        <!-- Hamburger -->
-                        <div class="-me-2 flex items-center sm:hidden">
-                            <button
-                                @click="showingNavigationDropdown = !showingNavigationDropdown"
-                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
-                            >
-                                <svg
-                                    class="h-6 w-6"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        :class="{
-                                            hidden: showingNavigationDropdown,
-                                            'inline-flex': !showingNavigationDropdown,
-                                        }"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                    <path
-                                        :class="{
-                                            hidden: !showingNavigationDropdown,
-                                            'inline-flex': showingNavigationDropdown,
-                                        }"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Responsive Navigation Menu -->
-                <div
-                    :class="{
-                        block: showingNavigationDropdown,
-                        hidden: !showingNavigationDropdown,
-                    }"
-                    class="sm:hidden"
-                >
-                    <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
+                    <!-- Left: brand + nav links -->
+                    <div class="flex items-center gap-8">
+                        <Link
                             :href="route('admin.dashboard')"
-                            :active="route().current('admin.dashboard')"
+                            class="text-xl font-bold text-primary"
                         >
-                            Dashboard
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            :href="route('admin.quotes.index')"
-                            :active="route().current('admin.quotes.*')"
-                        >
-                            Quotes
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            :href="route('admin.backgrounds.index')"
-                            :active="route().current('admin.backgrounds.*')"
-                        >
-                            Backgrounds
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            :href="route('admin.tags.index')"
-                            :active="route().current('admin.tags.*')"
-                        >
-                            Tags
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            :href="route('admin.categories.index')"
-                            :active="route().current('admin.categories.*')"
-                        >
-                            Categories
-                        </ResponsiveNavLink>
-                    </div>
+                            Whimsical MAGA
+                        </Link>
 
-                    <!-- Responsive Settings Options -->
-                    <div class="border-t border-gray-200 pb-1 pt-4">
-                        <div class="px-4">
-                            <div class="text-base font-medium text-gray-800">
-                                {{ $page.props.auth.user.name }}
-                            </div>
-                            <div class="text-sm font-medium text-gray-500">
-                                {{ $page.props.auth.user.email }}
-                            </div>
-                        </div>
-
-                        <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.edit')">
-                                Profile
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                :href="route('logout')"
-                                method="post"
-                                as="button"
+                        <div class="hidden items-center gap-1 sm:flex">
+                            <Link
+                                v-for="link in navLinks"
+                                :key="link.routeName"
+                                :href="route(link.routeName)"
+                                :class="[
+                                    'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                    route().current(link.pattern)
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                ]"
                             >
-                                Log Out
-                            </ResponsiveNavLink>
+                                {{ link.label }}
+                            </Link>
                         </div>
                     </div>
-                </div>
-            </nav>
 
-            <!-- Page Heading -->
-            <header class="bg-white shadow" v-if="$slots.header">
-                <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <slot name="header" />
-                </div>
-            </header>
+                    <!-- Right: user dropdown (desktop) -->
+                    <div class="hidden sm:flex">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger as-child>
+                                <Button variant="ghost" size="sm">
+                                    {{ $page.props.auth.user.name }}
+                                    <ChevronDown class="ml-1 h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" class="w-48">
+                                <DropdownMenuItem as-child>
+                                    <Link :href="route('profile.edit')" class="flex w-full items-center">
+                                        <User class="mr-2 h-4 w-4" />
+                                        Profile
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem as-child>
+                                    <Link
+                                        :href="route('logout')"
+                                        method="post"
+                                        as="button"
+                                        class="flex w-full items-center text-destructive focus:text-destructive"
+                                    >
+                                        <LogOut class="mr-2 h-4 w-4" />
+                                        Log out
+                                    </Link>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
 
-            <!-- Flash Messages -->
-            <div v-if="flash.success || flash.error" class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4">
-                <div
-                    v-if="flash.success"
-                    class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800"
-                >
-                    {{ flash.success }}
-                </div>
-                <div
-                    v-if="flash.error"
-                    class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800"
-                >
-                    {{ flash.error }}
+                    <!-- Hamburger (mobile) -->
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        class="sm:hidden"
+                        @click="showingNavigationDropdown = !showingNavigationDropdown"
+                    >
+                        <X v-if="showingNavigationDropdown" class="h-5 w-5" />
+                        <Menu v-else class="h-5 w-5" />
+                    </Button>
+
                 </div>
             </div>
 
-            <!-- Page Content -->
-            <main>
-                <slot />
-            </main>
+            <!-- Mobile menu -->
+            <div
+                v-if="showingNavigationDropdown"
+                class="border-t border-border bg-card px-4 pb-4 pt-2 sm:hidden"
+            >
+                <div class="space-y-1">
+                    <Link
+                        v-for="link in navLinks"
+                        :key="link.routeName"
+                        :href="route(link.routeName)"
+                        :class="[
+                            'block rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                            route().current(link.pattern)
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                        ]"
+                    >
+                        {{ link.label }}
+                    </Link>
+                </div>
+
+                <div class="mt-3 border-t border-border pt-3">
+                    <p class="px-3 text-sm font-medium">{{ $page.props.auth.user.name }}</p>
+                    <p class="px-3 text-xs text-muted-foreground">{{ $page.props.auth.user.email }}</p>
+                    <div class="mt-2 space-y-1">
+                        <Link
+                            :href="route('profile.edit')"
+                            class="flex items-center rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                            <User class="mr-2 h-4 w-4" />
+                            Profile
+                        </Link>
+                        <Link
+                            :href="route('logout')"
+                            method="post"
+                            as="button"
+                            class="flex w-full items-center rounded-md px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                        >
+                            <LogOut class="mr-2 h-4 w-4" />
+                            Log out
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page heading slot -->
+        <header v-if="$slots.header" class="border-b border-border bg-card">
+            <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                <slot name="header" />
+            </div>
+        </header>
+
+        <!-- Flash messages -->
+        <div
+            v-if="flash.success || flash.error"
+            class="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8"
+        >
+            <div
+                v-if="flash.success"
+                class="rounded-lg border border-secondary/50 bg-secondary/20 px-4 py-3 text-sm text-secondary-foreground"
+            >
+                {{ flash.success }}
+            </div>
+            <div
+                v-if="flash.error"
+                class="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
+                {{ flash.error }}
+            </div>
         </div>
+
+        <!-- Page content -->
+        <main>
+            <slot />
+        </main>
+
     </div>
 </template>
