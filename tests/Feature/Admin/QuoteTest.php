@@ -217,8 +217,8 @@ class QuoteTest extends TestCase
         $category = Category::factory()->create();
 
         $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
-            'tags' => [(string) $tag->id],
-            'categories' => [(string) $category->id],
+            'tags' => [['id' => $tag->id, 'name' => $tag->name]],
+            'categories' => [['id' => $category->id, 'name' => $category->name]],
             'sources' => [
                 ['url' => 'https://example.com', 'title' => 'Test', 'source_type' => 'article', 'is_primary' => true],
             ],
@@ -235,7 +235,7 @@ class QuoteTest extends TestCase
     public function test_store_can_create_new_tags_by_name(): void
     {
         $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
-            'tags' => ['brand-new-tag'],
+            'tags' => [['id' => null, 'name' => 'brand-new-tag']],
         ]));
 
         $this->assertDatabaseHas('tags', ['name' => 'brand-new-tag']);
@@ -287,7 +287,7 @@ class QuoteTest extends TestCase
     public function test_store_can_create_new_categories_by_name(): void
     {
         $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
-            'categories' => ['brand-new-category'],
+            'categories' => [['id' => null, 'name' => 'brand-new-category']],
         ]));
 
         $this->assertDatabaseHas('categories', ['name' => 'brand-new-category']);

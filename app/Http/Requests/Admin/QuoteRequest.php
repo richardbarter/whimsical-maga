@@ -31,10 +31,12 @@ class QuoteRequest extends FormRequest
             'quote_type_note' => ['nullable', 'string', 'max:255'],
 
             'tags' => ['nullable', 'array'],
-            'tags.*' => ['required', 'string'],
+            'tags.*.id' => ['nullable', 'integer'],
+            'tags.*.name' => ['required', 'string', 'max:255'],
 
             'categories' => ['nullable', 'array'],
-            'categories.*' => ['required', 'string'],
+            'categories.*.id' => ['nullable', 'integer'],
+            'categories.*.name' => ['required', 'string', 'max:255'],
 
             'sources' => ['nullable', 'array'],
             'sources.*.url' => ['required', 'url', 'max:2048'],
