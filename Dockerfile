@@ -103,7 +103,8 @@ RUN mkdir -p storage/framework/sessions \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache \
     && mkdir -p /tmp/nginx_client_body \
-    && chown www-data:www-data /tmp/nginx_client_body
+    && mkdir -p /tmp/nginx_fastcgi \
+    && chown www-data:www-data /tmp/nginx_client_body /tmp/nginx_fastcgi
 
 # Finalise Composer autoloader — also runs package:discover via post-autoload-dump
 RUN composer dump-autoload --no-dev --optimize --no-interaction
