@@ -4,6 +4,12 @@ import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+    server: {
+        host: '0.0.0.0',
+        hmr: {
+            host: 'localhost',
+        },
+    },
     plugins: [
         laravel({
             input: 'resources/js/app.ts',

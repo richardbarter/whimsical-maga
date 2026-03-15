@@ -26,10 +26,10 @@ class SecurityHeaders
             // Adjust frame-ancestors, img-src, and connect-src if you add CDN/external resources.
             $response->headers->set('Content-Security-Policy', implode('; ', [
                 "default-src 'self'",
-                "script-src 'self'",
-                "style-src 'self' 'unsafe-inline'",   // unsafe-inline needed for Tailwind class injection
-                "img-src 'self' data: blob:",
-                "font-src 'self'",
+                "script-src 'self' 'unsafe-inline'",  // unsafe-inline required for Inertia's initial page data injection
+                "style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com",
+                "img-src 'self' data: blob: https://*.r2.dev",
+                "font-src 'self' https://fonts.bunny.net https://fonts.gstatic.com",
                 "connect-src 'self'",
                 "object-src 'none'",
                 "frame-ancestors 'none'",              // disallow embedding in iframes

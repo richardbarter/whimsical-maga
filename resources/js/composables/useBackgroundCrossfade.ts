@@ -10,12 +10,12 @@ export function useBackgroundCrossfade(backgrounds: Background[]) {
     () => backgrounds[currentBackgroundIndex.value] ?? null,
   );
 
-  function preloadImage(filePath: string): Promise<void> {
+  function preloadImage(url: string): Promise<void> {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve();
       img.onerror = () => resolve();
-      img.src = `/storage/${filePath}`;
+      img.src = url;
     });
   }
 
@@ -24,7 +24,7 @@ export function useBackgroundCrossfade(backgrounds: Background[]) {
     const nextIdx = (fromIdx + 1) % backgrounds.length;
     const next = backgrounds[nextIdx];
     if (next) {
-      preloadImage(next.file_path);
+      preloadImage(next.url);
     }
   }
 
@@ -35,9 +35,9 @@ export function useBackgroundCrossfade(backgrounds: Background[]) {
     if (!newBg) return;
 
     const inactiveIdx = (1 - activeLayer.value) as 0 | 1;
-    layers.value[inactiveIdx].bg = `/storage/${newBg.file_path}`;
+    layers.value[inactiveIdx].bg = newBg.url;
 
-    await preloadImage(newBg.file_path);
+    await preloadImage(newBg.url);
 
     currentBackgroundIndex.value = newIdx;
     activeLayer.value = inactiveIdx;
@@ -52,7 +52,7 @@ export function useBackgroundCrossfade(backgrounds: Background[]) {
 
   onMounted(() => {
     if (backgrounds.length > 0) {
-      layers.value[0].bg = `/storage/${backgrounds[0].file_path}`;
+      layers.value[0].bg = backgrounds[0].url;
       preloadNextBackground(0);
     }
   });
