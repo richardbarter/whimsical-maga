@@ -257,6 +257,8 @@ Custom PHP INI overrides are written to `/usr/local/etc/php/conf.d/` at build ti
 - `client_max_body_size 10M` — matches the PHP upload limit
 - `client_body_temp_path /tmp/nginx_client_body` — nginx buffers uploaded files to disk before passing them to PHP-FPM; this path must be writable by the `www-data` worker process. The default Alpine path (`/var/lib/nginx/tmp/`) is owned by the `nginx` system user and not accessible to `www-data`, so we redirect it to `/tmp`.
 
+Security headers (`X-Frame-Options`, `Content-Security-Policy`, etc.) are intentionally **not** set in nginx. They are handled entirely by the Laravel middleware stack (`bepsvpt/secure-headers` for general headers, `spatie/laravel-csp` for CSP), which allows environment-aware behaviour (e.g. HSTS only in production) and nonce-based CSP without duplicating header logic across two layers.
+
 ### Entrypoint behaviour
 
 On every container start (`docker/entrypoint.sh`):
