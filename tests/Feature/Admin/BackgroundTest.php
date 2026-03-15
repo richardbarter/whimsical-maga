@@ -20,7 +20,7 @@ class BackgroundTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('public');
+        Storage::fake();
         $this->admin = User::factory()->admin()->create();
         $this->regularUser = User::factory()->asUser()->create();
     }
@@ -123,7 +123,7 @@ class BackgroundTest extends TestCase
             ->post(route('admin.backgrounds.store'), $this->validPayload());
 
         $background = Background::first();
-        Storage::disk('public')->assertExists($background->file_path);
+        Storage::assertExists($background->file_path);
     }
 
     public function test_store_extracts_file_size_and_dimensions(): void
@@ -235,14 +235,14 @@ class BackgroundTest extends TestCase
 
         $updatedBackground = $background->fresh();
         $this->assertNotEquals($background->file_path, $updatedBackground->file_path);
-        Storage::disk('public')->assertExists($updatedBackground->file_path);
+        Storage::assertExists($updatedBackground->file_path);
     }
 
     public function test_update_deletes_old_file_when_replacing_image(): void
     {
         // Place a fake file in storage to simulate an existing background image.
         $oldPath = 'backgrounds/old-image.jpg';
-        Storage::disk('public')->put($oldPath, 'fake image content');
+        Storage::put($oldPath, 'fake image content');
         $background = Background::factory()->create(['file_path' => $oldPath]);
 
         $this->actingAs($this->admin)->put(
@@ -250,7 +250,7 @@ class BackgroundTest extends TestCase
             ['image' => UploadedFile::fake()->image('replacement.jpg', 1920, 1080)]
         );
 
-        Storage::disk('public')->assertMissing($oldPath);
+        Storage::assertMissing($oldPath);
     }
 
     public function test_update_validation_fails_with_invalid_mime_on_replacement(): void
@@ -291,22 +291,22 @@ class BackgroundTest extends TestCase
     public function test_destroy_preserves_file_in_storage_on_soft_delete(): void
     {
         $filePath = 'backgrounds/to-delete.jpg';
-        Storage::disk('public')->put($filePath, 'fake image content');
+        Storage::put($filePath, 'fake image content');
         $background = Background::factory()->create(['file_path' => $filePath]);
 
         $this->actingAs($this->admin)->delete(route('admin.backgrounds.destroy', $background));
 
-        Storage::disk('public')->assertExists($filePath);
+        Storage::assertExists($filePath);
     }
 
     public function test_force_delete_removes_file_from_storage(): void
     {
         $filePath = 'backgrounds/to-force-delete.jpg';
-        Storage::disk('public')->put($filePath, 'fake image content');
+        Storage::put($filePath, 'fake image content');
         $background = Background::factory()->create(['file_path' => $filePath]);
 
         $background->forceDelete();
 
-        Storage::disk('public')->assertMissing($filePath);
+        Storage::assertMissing($filePath);
     }
 }

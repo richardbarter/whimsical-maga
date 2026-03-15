@@ -79,7 +79,7 @@ const { currentQuote, currentQuoteIndex } = useQuoteRotation(
             </blockquote>
 
             <div v-else key="empty" class="text-center text-gray-600">
-              <p class="text-xl">Welcome to Whimsical MAGA Quips</p>
+              <p class="text-xl">Welcome to Whimsical MAGA Quotes</p>
               <p class="mt-2 text-sm">
                 No quotes available yet. Check back soon!
               </p>

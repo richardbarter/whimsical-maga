@@ -34,13 +34,13 @@ class Background extends Model
 
     protected function url(): Attribute
     {
-        return Attribute::get(fn () => Storage::disk('public')->url($this->file_path));
+        return Attribute::get(fn () => Storage::disk()->url($this->file_path));
     }
 
     protected static function booted(): void
     {
         static::forceDeleting(function (Background $background) {
-            Storage::disk('public')->delete($background->file_path);
+            Storage::disk()->delete($background->file_path);
         });
     }
 }

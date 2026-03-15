@@ -34,7 +34,7 @@ class BackgroundController extends Controller
     {
         // Act
         $file = $request->file('image');
-        $path = $file->store('backgrounds', 'public');
+        $path = $file->store('backgrounds');
         $size = getimagesize($file->getRealPath());
 
         Background::create([
@@ -66,10 +66,10 @@ class BackgroundController extends Controller
         $data = $request->only(['title', 'alt_text', 'description', 'credit', 'source_url']);
 
         if ($request->hasFile('image')) {
-            Storage::disk('public')->delete($background->file_path);
+            Storage::delete($background->file_path);
 
             $file = $request->file('image');
-            $path = $file->store('backgrounds', 'public');
+            $path = $file->store('backgrounds');
             $size = getimagesize($file->getRealPath());
 
             $data['file_path'] = $path;

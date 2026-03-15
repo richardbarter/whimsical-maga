@@ -1,0 +1,47 @@
+# fly.toml app configuration file generated for whimsical-maga on 2026-03-13T21:53:32Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'whimsical-maga'
+primary_region = 'ord'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  APP_ENV = 'production'
+  APP_DEBUG = 'false'
+  DB_CONNECTION = 'pgsql'
+  FILESYSTEM_DISK = 'r2'
+  SESSION_DRIVER = 'database'
+  QUEUE_CONNECTION = 'database'
+  CACHE_STORE = 'database'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = 'requests'
+    hard_limit = 200
+    soft_limit = 150
+
+[checks]
+  [checks.health]
+    port = 8080
+    type = 'http'
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/up'
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '256mb'
+  cpus = 1
+  memory_mb = 256

@@ -1,0 +1,58 @@
+services:
+
+  # ─── PostgreSQL Database ───────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: whimsical_quips
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ─── PHP App (Nginx + PHP-FPM) ────────────────────────────
+  app:
+    build:
+      context: .
+      target: php
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor          # keep container vendor, not host's
+      - /var/www/html/public/build    # keep container build, not host's
+      - /var/www/html/bootstrap/cache # keep container package discovery, not host's
+      - ./docker/php-dev.ini:/usr/local/etc/php/conf.d/zz-dev.ini  # disable OPcache in dev
+    ports:
+      - "8000:8080"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_HOST: postgres             # override .env's 127.0.0.1
+      DB_PORT: "5432"
+      DB_DATABASE: whimsical_quips
+      DB_USERNAME: postgres
+      DB_PASSWORD: password
+      FILESYSTEM_DISK: public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ─── Vite Dev Server (HMR) ────────────────────────────────
+  vite:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules  # keep container node_modules, not host's
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+volumes:
+  postgres_data:
