@@ -30,6 +30,8 @@ const form = useForm<QuoteFormData>({
     speaker: props.initialValues?.speaker ?? '',
     quote_type: props.initialValues?.quote_type ?? '',
     quote_type_note: props.initialValues?.quote_type_note ?? '',
+    claim: props.initialValues?.claim ?? '',
+    reality_check: props.initialValues?.reality_check ?? '',
     context: props.initialValues?.context ?? '',
     location: props.initialValues?.location ?? '',
     occurred_at: props.initialValues?.occurred_at ?? '',
@@ -147,6 +149,38 @@ function submit() {
                     <Label>Date Occurred</Label>
                     <DatePicker v-model="form.occurred_at" placeholder="Pick a date" />
                     <p v-if="form.errors.occurred_at" class="text-sm text-destructive">{{ form.errors.occurred_at }}</p>
+                </div>
+            </CardContent>
+        </Card>
+
+        <!-- Claim & Reality Check -->
+        <Card>
+            <CardHeader>
+                <CardTitle>Claim & Reality Check</CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-4">
+                <div class="space-y-2">
+                    <Label for="claim">Claim</Label>
+                    <p class="text-sm text-muted-foreground">The assertion or justification being made — what is this quote trying to support or prove?</p>
+                    <Textarea
+                        id="claim"
+                        v-model="form.claim"
+                        placeholder="Describe the claim being made..."
+                        class="min-h-[100px]"
+                    />
+                    <p v-if="form.errors.claim" class="text-sm text-destructive">{{ form.errors.claim }}</p>
+                </div>
+
+                <div class="space-y-2">
+                    <Label for="reality_check">Reality Check</Label>
+                    <p class="text-sm text-muted-foreground">An analysis of the claim — what is true, what is false, and what is missing context?</p>
+                    <Textarea
+                        id="reality_check"
+                        v-model="form.reality_check"
+                        placeholder="Break down what is accurate, misleading, or false..."
+                        class="min-h-[120px]"
+                    />
+                    <p v-if="form.errors.reality_check" class="text-sm text-destructive">{{ form.errors.reality_check }}</p>
                 </div>
             </CardContent>
         </Card>
