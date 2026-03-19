@@ -35,6 +35,8 @@ function makeQuote(overrides: Partial<Quote> = {}): Quote {
         status: 'published',
         is_verified: false,
         is_featured: false,
+        claim: null,
+        reality_check: null,
         view_count: 0,
         created_at: '2025-01-15T00:00:00Z',
         updated_at: '2025-01-15T00:00:00Z',

@@ -56,7 +56,7 @@ class QuoteController extends Controller
 
         try {
             $quote = Quote::create([
-                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note']),
+                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note', 'claim', 'reality_check']),
                 'speaker_id' => $speakerId,
                 'slug' => $slug,
                 'user_id' => $request->user()->id,
@@ -65,7 +65,7 @@ class QuoteController extends Controller
             // Race condition: two requests generated the same slug at the same moment.
             // The DB unique constraint caught it. Append a timestamp and retry once.
             $quote = Quote::create([
-                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note']),
+                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note', 'claim', 'reality_check']),
                 'speaker_id' => $speakerId,
                 'slug' => $slug.'-'.time(),
                 'user_id' => $request->user()->id,
@@ -108,14 +108,14 @@ class QuoteController extends Controller
 
         try {
             $quote->update([
-                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note']),
+                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note', 'claim', 'reality_check']),
                 'speaker_id' => $speakerId,
                 'slug' => $slug,
             ]);
         } catch (UniqueConstraintViolationException) {
             // Race condition: two requests tried to update to the same slug simultaneously.
             $quote->update([
-                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note']),
+                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note', 'claim', 'reality_check']),
                 'speaker_id' => $speakerId,
                 'slug' => $slug.'-'.time(),
             ]);

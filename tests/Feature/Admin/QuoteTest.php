@@ -242,6 +242,28 @@ class QuoteTest extends TestCase
         $this->assertCount(1, Quote::first()->tags);
     }
 
+    public function test_store_saves_claim_and_reality_check(): void
+    {
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'claim' => 'The economy was the best ever.',
+            'reality_check' => 'GDP growth was average by historical standards.',
+        ]));
+
+        $this->assertDatabaseHas('quotes', [
+            'claim' => 'The economy was the best ever.',
+            'reality_check' => 'GDP growth was average by historical standards.',
+        ]);
+    }
+
+    public function test_store_saves_quote_with_null_claim_and_reality_check(): void
+    {
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload());
+
+        $quote = Quote::first();
+        $this->assertNull($quote->claim);
+        $this->assertNull($quote->reality_check);
+    }
+
     public function test_store_validation_fails_when_required_fields_are_missing(): void
     {
         $response = $this->actingAs($this->admin)
@@ -380,6 +402,26 @@ class QuoteTest extends TestCase
 
         $this->assertNotEquals($originalSlug, $quote->fresh()->slug);
         $this->assertEquals('totally-different-text-that-is-brand-new-here', $quote->fresh()->slug);
+    }
+
+    public function test_update_saves_claim_and_reality_check(): void
+    {
+        $quote = Quote::factory()->create();
+
+        $this->actingAs($this->admin)->put(
+            route('admin.quotes.update', $quote),
+            $this->validPayload([
+                'text' => $quote->text,
+                'claim' => 'Crime is up everywhere.',
+                'reality_check' => 'FBI data shows violent crime declining in most cities.',
+            ])
+        );
+
+        $this->assertDatabaseHas('quotes', [
+            'id' => $quote->id,
+            'claim' => 'Crime is up everywhere.',
+            'reality_check' => 'FBI data shows violent crime declining in most cities.',
+        ]);
     }
 
     public function test_update_validation_fails_when_required_fields_are_missing(): void

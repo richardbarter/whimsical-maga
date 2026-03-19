@@ -60,6 +60,8 @@ export interface Quote {
     status: 'published' | 'draft' | 'pending';
     quote_type?: 'spoken' | 'written' | 'testimony' | 'alleged' | 'paraphrased' | 'other';
     quote_type_note?: string;
+    claim: string | null;
+    reality_check: string | null;
     user_id?: number;
     user?: User;
     sources?: Source[];
@@ -108,6 +110,8 @@ export interface QuoteFormData {
     speaker: string;
     quote_type: string;
     quote_type_note: string;
+    claim: string;
+    reality_check: string;
     context: string;
     location: string;
     occurred_at: string;

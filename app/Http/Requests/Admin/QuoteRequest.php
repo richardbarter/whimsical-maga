@@ -29,6 +29,8 @@ class QuoteRequest extends FormRequest
             'status' => ['required', 'in:published,draft,pending'],
             'quote_type' => ['required', 'string', Rule::enum(QuoteType::class)],
             'quote_type_note' => ['nullable', 'string', 'max:255'],
+            'claim' => ['nullable', 'string'],
+            'reality_check' => ['nullable', 'string'],
 
             'tags' => ['nullable', 'array'],
             'tags.*.id' => ['nullable', 'integer'],

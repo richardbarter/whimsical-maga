@@ -32,6 +32,8 @@ class Quote extends Model
         'status',
         'quote_type',
         'quote_type_note',
+        'claim',
+        'reality_check',
         'user_id',
     ];
 

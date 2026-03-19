@@ -18,6 +18,8 @@ const initialValues: QuoteFormData = {
     speaker: props.quote.speaker?.name ?? '',
     quote_type: props.quote.quote_type ?? '',
     quote_type_note: props.quote.quote_type_note ?? '',
+    claim: props.quote.claim ?? '',
+    reality_check: props.quote.reality_check ?? '',
     context: props.quote.context ?? '',
     location: props.quote.location ?? '',
     occurred_at: props.quote.occurred_at ? props.quote.occurred_at.substring(0, 10) : '',
