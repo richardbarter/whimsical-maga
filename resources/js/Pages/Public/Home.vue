@@ -5,6 +5,9 @@ import { useQuoteRotation } from "@/composables/useQuoteRotation";
 import type { Background, Quote } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { Head } from "@inertiajs/vue3";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-vue-next";
+import { useSwipe } from "@vueuse/core";
+import { onMounted, onUnmounted, ref } from "vue";
 
 const props = defineProps<{
   quotes: Quote[];
@@ -14,10 +17,26 @@ const props = defineProps<{
 const { layers, activeLayer, currentBackground, transitionToNext } =
   useBackgroundCrossfade(props.backgrounds);
 
-const { currentQuote, currentQuoteIndex } = useQuoteRotation(
-  props.quotes,
-  transitionToNext,
-);
+const { currentQuote, currentQuoteIndex, isPaused, togglePause, goToNext, goToPrev, canGoBack } =
+  useQuoteRotation(props.quotes, transitionToNext);
+
+const container = ref<HTMLElement | null>(null);
+
+useSwipe(container, {
+  onSwipeEnd(_e, direction) {
+    if (direction === "left") goToNext();
+    if (direction === "right") goToPrev();
+  },
+});
+
+function onKeyDown(e: KeyboardEvent): void {
+  if (e.key === "ArrowLeft") goToPrev();
+  if (e.key === "ArrowRight") goToNext();
+  if (e.key === " ") togglePause();
+}
+
+onMounted(() => window.addEventListener("keydown", onKeyDown));
+onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
 </script>
 
 <template>
@@ -25,20 +44,50 @@ const { currentQuote, currentQuoteIndex } = useQuoteRotation(
 
   <PublicLayout>
     <div
+      ref="container"
       class="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-900"
     >
       <!-- Background layer 0 -->
       <div
-        class="absolute inset-0 bg-cover bg-center transition-opacity duration-[1500ms]"
+        class="absolute inset-0 bg-cover bg-center transition-opacity duration-1500"
         :class="activeLayer === 0 ? 'opacity-100' : 'opacity-0'"
         :style="layers[0].bg ? `background-image: url('${layers[0].bg}')` : ''"
       />
       <!-- Background layer 1 -->
       <div
-        class="absolute inset-0 bg-cover bg-center transition-opacity duration-[1500ms]"
+        class="absolute inset-0 bg-cover bg-center transition-opacity duration-1500"
         :class="activeLayer === 1 ? 'opacity-100' : 'opacity-0'"
         :style="layers[1].bg ? `background-image: url('${layers[1].bg}')` : ''"
       />
+
+      <!-- Pause/play button -->
+      <button
+        @click="togglePause"
+        class="absolute left-4 top-4 z-10 flex cursor-pointer items-center justify-center rounded-full bg-black/40 p-2.5 text-white backdrop-blur-sm transition hover:bg-black/60"
+        :aria-label="isPaused ? 'Play quote rotation' : 'Pause quote rotation'"
+      >
+        <Pause v-if="!isPaused" class="size-5" />
+        <Play v-if="isPaused" class="size-5" />
+      </button>
+
+      <!-- Previous quote button -->
+      <button
+        @click="goToPrev"
+        :disabled="!canGoBack"
+        class="absolute left-4 top-1/2 z-10 -translate-y-1/2 flex cursor-pointer items-center justify-center rounded-full bg-black/40 p-2.5 text-white backdrop-blur-sm transition hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-30"
+        aria-label="Previous quote"
+      >
+        <ChevronLeft class="size-5" />
+      </button>
+
+      <!-- Next quote button -->
+      <button
+        @click="goToNext"
+        class="absolute right-4 top-1/2 z-10 -translate-y-1/2 flex cursor-pointer items-center justify-center rounded-full bg-black/40 p-2.5 text-white backdrop-blur-sm transition hover:bg-black/60"
+        aria-label="Next quote"
+      >
+        <ChevronRight class="size-5" />
+      </button>
 
       <!-- Overlay for text readability -->
       <div class="absolute inset-0 bg-black/30" />
