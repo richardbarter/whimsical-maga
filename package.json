@@ -33,6 +33,7 @@
         "vue-tsc": "^2.0.24"
     },
     "dependencies": {
+        "@vuepic/vue-datepicker": "^12.1.0",
         "@vueuse/core": "^14.2.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
