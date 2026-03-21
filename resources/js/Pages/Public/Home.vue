@@ -35,6 +35,14 @@ function onKeyDown(e: KeyboardEvent): void {
   if (e.key === " ") togglePause();
 }
 
+let lastTap = 0;
+
+function onTouchEnd(): void {
+  const now = Date.now();
+  if (now - lastTap < 300) togglePause();
+  lastTap = now;
+}
+
 onMounted(() => window.addEventListener("keydown", onKeyDown));
 onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
 </script>
@@ -46,7 +54,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
     <div
       ref="container"
       class="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-900"
-      @dblclick="togglePause"
+      @touchend="onTouchEnd"
     >
       <!-- Background layer 0 -->
       <div
