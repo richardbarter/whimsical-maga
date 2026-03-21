@@ -46,6 +46,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
     <div
       ref="container"
       class="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-900"
+      @dblclick="togglePause"
     >
       <!-- Background layer 0 -->
       <div
