@@ -1,59 +1,26 @@
 <script setup lang="ts">
-import type { DateValue } from '@internationalized/date'
-import { CalendarDate } from '@internationalized/date'
-import { computed, ref, watch } from 'vue'
-import { CalendarIcon } from 'lucide-vue-next'
-import { Calendar } from '@/Components/ui/calendar'
-import { Button } from '@/Components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover'
+import { VueDatePicker } from "@vuepic/vue-datepicker";
+import "@vuepic/vue-datepicker/dist/main.css";
 
-const model = defineModel<string>({ default: '' })
+const model = defineModel<string>({ default: "" });
 
-const props = withDefaults(defineProps<{
-  placeholder?: string
-}>(), {
-  placeholder: 'Pick a date',
-})
-
-const open = ref(false)
-
-const calendarDate = computed<DateValue | undefined>(() => {
-  if (!model.value) return undefined
-  const [year, month, day] = model.value.split('-').map(Number)
-  if (!year || !month || !day) return undefined
-  return new CalendarDate(year, month, day)
-})
-
-const formattedDate = computed(() => {
-  if (!calendarDate.value) return ''
-  return `${calendarDate.value.month}/${calendarDate.value.day}/${calendarDate.value.year}`
-})
-
-function onDateSelect(date: DateValue | undefined) {
-  if (!date) return
-  const iso = `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`
-  model.value = iso
-  open.value = false
-}
+withDefaults(
+  defineProps<{
+    placeholder?: string;
+  }>(),
+  {
+    placeholder: "Pick a date",
+  },
+);
 </script>
 
 <template>
-  <Popover v-model:open="open">
-    <PopoverTrigger as-child>
-      <Button
-        variant="outline"
-        class="w-full justify-start text-left font-normal"
-        :class="{ 'text-muted-foreground': !calendarDate }"
-      >
-        <CalendarIcon class="mr-2 h-4 w-4" />
-        {{ formattedDate || placeholder }}
-      </Button>
-    </PopoverTrigger>
-    <PopoverContent class="w-auto p-0">
-      <Calendar
-        :model-value="calendarDate"
-        @update:model-value="onDateSelect"
-      />
-    </PopoverContent>
-  </Popover>
+  <VueDatePicker
+    v-model="model"
+    model-type="yyyy-MM-dd"
+    :time-config="{ enableTimePicker: false }"
+    :placeholder="placeholder"
+    auto-apply
+    class="w-full"
+  />
 </template>
