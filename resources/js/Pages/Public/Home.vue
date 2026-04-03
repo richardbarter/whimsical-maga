@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import NavMenu from "@/Components/NavMenu.vue";
 import PublicLayout from "@/Layouts/PublicLayout.vue";
 import { useBackgroundCrossfade } from "@/composables/useBackgroundCrossfade";
 import { useQuoteRotation } from "@/composables/useQuoteRotation";
 import type { Background, Quote } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { Head } from "@inertiajs/vue3";
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { useSwipe } from "@vueuse/core";
 import { onMounted, onUnmounted, ref } from "vue";
 
@@ -17,10 +18,64 @@ const props = defineProps<{
 const { layers, activeLayer, currentBackground, transitionToNext } =
   useBackgroundCrossfade(props.backgrounds);
 
-const { currentQuote, currentQuoteIndex, isPaused, togglePause, goToNext, goToPrev, canGoBack } =
-  useQuoteRotation(props.quotes, transitionToNext);
+const {
+  currentQuote,
+  currentQuoteIndex,
+  isPaused,
+  togglePause,
+  goToNext,
+  goToPrev,
+  canGoBack,
+} = useQuoteRotation(props.quotes, transitionToNext);
 
 const container = ref<HTMLElement | null>(null);
+const cardRef = ref<HTMLElement | null>(null);
+let savedHeight = 0;
+let heightAnimation: Animation | null = null;
+
+function onBeforeLeave(): void {
+  const card = cardRef.value;
+  if (!card) return;
+
+  // Read offsetHeight while any previous animation fill is still active,
+  // so we capture the correct current visual height before cancelling it.
+  savedHeight = card.offsetHeight; // ex: card is currently 300px
+
+  // Cancel previous animation — its fill: forwards would otherwise override
+  // the inline style we set below, causing scrollHeight to read stale values.
+  heightAnimation?.cancel(); // ex: cancel any previous WAAPI animation
+  heightAnimation = null;
+
+  card.style.height = `${savedHeight}px`; // lock it to this height? if we let as auto, it would instantly snap to the new quote's height the moment Vue swaps the content.
+  card.style.overflow = "hidden"; // clip anything that pokes out. technically shouldn't be a problem since quote text already fades out before this occurs, but just in case.
+}
+
+function onEnter(): void {
+  const card = cardRef.value;
+  if (!card) return;
+
+  // Release height lock temporarily to measure new content's natural height.
+  // Without this, scrollHeight returns savedHeight when shrinking (locked height wins).
+  card.style.height = "auto";
+  const newHeight = card.scrollHeight;
+  card.style.height = `${savedHeight}px`;
+  void card.offsetHeight; // force reflow so browser registers the restored height
+
+  heightAnimation = card.animate(
+    [{ height: `${savedHeight}px` }, { height: `${newHeight}px` }],
+    { duration: 300, easing: "ease", fill: "forwards" },
+  );
+  heightAnimation.onfinish = () => {
+    // commitStyles() bakes the final animated height into the inline style,
+    // then cancel() removes the fill — without this the fill keeps overriding
+    // inline styles and we lose the ability to measure correctly next time.
+    heightAnimation?.commitStyles();
+    heightAnimation?.cancel();
+    card.style.height = "auto";
+    card.style.overflow = "";
+    heightAnimation = null;
+  };
+}
 
 useSwipe(container, {
   onSwipeEnd(_e, direction) {
@@ -69,15 +124,8 @@ onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
         :style="layers[1].bg ? `background-image: url('${layers[1].bg}')` : ''"
       />
 
-      <!-- Pause/play button -->
-      <button
-        @click="togglePause"
-        class="absolute left-4 top-4 z-10 flex cursor-pointer items-center justify-center rounded-full bg-black/40 p-2.5 text-white backdrop-blur-sm transition hover:bg-black/60"
-        :aria-label="isPaused ? 'Play quote rotation' : 'Pause quote rotation'"
-      >
-        <Pause v-if="!isPaused" class="size-5" />
-        <Play v-if="isPaused" class="size-5" />
-      </button>
+      <!-- Nav menu + pause/play -->
+      <NavMenu :is-paused="isPaused" @toggle-pause="togglePause" />
 
       <!-- Previous quote button -->
       <button
@@ -104,9 +152,15 @@ onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
       <!-- Quote card -->
       <div class="relative z-10 mx-4 w-full max-w-3xl">
         <div
+          ref="cardRef"
           class="rounded-2xl bg-white/90 p-8 shadow-2xl backdrop-blur-sm sm:p-12"
         >
-          <Transition name="quote-fade" mode="out-in">
+          <Transition
+            name="quote-fade"
+            mode="out-in"
+            @before-leave="onBeforeLeave"
+            @enter="onEnter"
+          >
             <blockquote
               v-if="currentQuote"
               :key="currentQuoteIndex"
@@ -122,16 +176,15 @@ onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
                   v-if="currentQuote.speaker"
                   class="font-medium text-gray-700"
                 >
-                  — {{ currentQuote.speaker.name }}
+                  — {{ currentQuote.speaker.name
+                  }}<span
+                    v-if="currentQuote.occurred_at"
+                    class="font-normal text-gray-500"
+                    >, {{ formatDate(currentQuote.occurred_at) }}</span
+                  >
                 </p>
                 <p v-if="currentQuote.context" class="text-sm text-gray-600">
                   {{ currentQuote.context }}
-                </p>
-                <p
-                  v-if="currentQuote.occurred_at"
-                  class="text-sm text-gray-500"
-                >
-                  {{ formatDate(currentQuote.occurred_at) }}
                 </p>
               </footer>
             </blockquote>
@@ -158,16 +211,21 @@ onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
 </template>
 
 <style scoped>
-.quote-fade-enter-active {
-  transition: opacity 0.6s ease;
-}
-
+/* Old quote fades out quickly */
 .quote-fade-leave-active {
-  transition: opacity 0.4s ease;
+  transition: opacity 200ms ease;
+}
+.quote-fade-leave-to {
+  opacity: 0;
 }
 
-.quote-fade-enter-from,
-.quote-fade-leave-to {
+/* New quote fades in after the card resize completes (300ms delay) */
+.quote-fade-enter-active {
+  transition: opacity 350ms ease 300ms;
+}
+
+/* New quote invisible, waiting for resize to complete before showing */
+.quote-fade-enter-from {
   opacity: 0;
 }
 </style>
