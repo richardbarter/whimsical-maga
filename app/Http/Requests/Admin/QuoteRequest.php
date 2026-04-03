@@ -21,7 +21,7 @@ class QuoteRequest extends FormRequest
         return [
             'text' => ['required', 'string', 'max:5000'],
             'speaker' => ['required', 'string', 'max:255'],
-            'context' => ['nullable', 'string', 'max:1000'],
+            'context' => ['nullable', 'string', 'max:2000'],
             'location' => ['nullable', 'string', 'max:255'],
             'occurred_at' => ['nullable', 'date'],
             'is_verified' => ['boolean'],
