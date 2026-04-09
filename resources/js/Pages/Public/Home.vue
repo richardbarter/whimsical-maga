@@ -57,8 +57,8 @@ function onEnter(): void {
   // Release height lock temporarily to measure new content's natural height.
   // Without this, scrollHeight returns savedHeight when shrinking (locked height wins).
   card.style.height = "auto";
-  const newHeight = card.scrollHeight;
-  card.style.height = `${savedHeight}px`;
+  const newHeight = card.scrollHeight; // get what the new height would be
+  card.style.height = `${savedHeight}px`; // set back to saved height before has a chance to render the auto height
   void card.offsetHeight; // force reflow so browser registers the restored height
 
   heightAnimation = card.animate(
@@ -150,7 +150,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
       <div class="absolute inset-0 bg-black/30" />
 
       <!-- Quote card -->
-      <div class="relative z-10 mx-4 w-full max-w-3xl">
+      <div class="relative z-10 mx-4 w-full max-w-3xl mt-20 mb-6">
         <div
           ref="cardRef"
           class="rounded-2xl bg-white/90 p-8 shadow-2xl backdrop-blur-sm sm:p-12"
