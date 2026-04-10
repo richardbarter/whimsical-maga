@@ -22,7 +22,7 @@ _Whimsical MAGA_ is a spiritual successor. Same rotating-quote format, same absu
 
 One of the most frustrating things about the Trump era is the sheer volume of it. Outrage after outrage, week after week, and people forget. Something genuinely alarming gets buried within days by the next thing. I wanted somewhere to record the more extraordinary claims and actions so they aren't just lost to the ether.
 
-The second inspiration is [Skeptical Science](https://skepticalscience.com/argument.php), which catalogues common climate change denial talking points and methodically explains why each one is wrong. Ever since I dug into what actually happened on and around January 6th, I've wanted something similar for MAGA talking points: an archive that doesn't just report what was said, but breaks down what we know, what's false, and what the evidence actually shows. The January 6th Committee Report runs to over 800 pages; most people will never read it. One goal of this project is to surface its most significant findings in a digestible, accessible format.
+The second inspiration is [Skeptical Science](https://skepticalscience.com/argument.php), which catalogues common climate change denial talking points and methodically explains why each one is wrong. Ever since I dug into what actually happened on and around January 6th 2021, I've wanted something similar for MAGA talking points: an archive that doesn't just report what was said, but breaks down what we know, what's false, and what the evidence actually shows. The January 6th Committee Report runs to over 800 pages; most people will never read it. One goal of this project is to surface its most significant findings in a digestible, accessible format.
 
 ## Screenshots
 
