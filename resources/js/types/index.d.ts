@@ -72,6 +72,13 @@ export interface Quote {
     updated_at: string;
 }
 
+/** Cursor for the home page's batched quote feed. */
+export interface QuoteFeed {
+    seed: number;
+    page: number;
+    hasMore: boolean;
+}
+
 export interface Background {
     id: number;
     file_path: string;
