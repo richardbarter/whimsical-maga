@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\SavedContext;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SavedContext>
+ * @extends Factory<SavedContext>
  */
 class SavedContextFactory extends Factory
 {
