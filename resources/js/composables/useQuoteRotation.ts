@@ -1,12 +1,25 @@
 import type { Quote } from "@/types";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, type Ref } from "vue";
 
 const QUOTE_INTERVAL_MS = 10_000;
 const BACKGROUND_EVERY_N_QUOTES = 3;
 
+/** Ask for the next batch while this many unseen quotes are still loaded. */
+const LOAD_MORE_THRESHOLD = 5;
+
+interface QuoteRotationOptions {
+  onBackgroundAdvance: () => void;
+  onRunningLow: () => void;
+}
+
+/**
+ * Plays through quotes in the order given — the server has already shuffled them — and
+ * wraps back to the start after the last one. Quotes may be appended while it runs.
+ * History lets the visitor step back through what they've seen.
+ */
 export function useQuoteRotation(
-  quotes: Quote[],
-  onBackgroundAdvance: () => void,
+  quotes: Ref<Quote[]>,
+  { onBackgroundAdvance, onRunningLow }: QuoteRotationOptions,
 ) {
   const history = ref<number[]>([0]);
   const historyPosition = ref(0);
@@ -17,62 +30,64 @@ export function useQuoteRotation(
     () => history.value[historyPosition.value] ?? 0,
   );
 
-  const currentQuote = computed(() => quotes[currentQuoteIndex.value] ?? null);
+  const currentQuote = computed(
+    () => quotes.value[currentQuoteIndex.value] ?? null,
+  );
 
   const canGoBack = computed(() => historyPosition.value > 0);
 
   let quoteTimer: ReturnType<typeof setInterval> | null = null;
 
-  function pickRandomIndex(): number {
-    if (quotes.length <= 1) {
-      return 0;
-    }
-
-    let next: number;
-
-    do {
-      next = Math.floor(Math.random() * quotes.length);
-    } while (next === currentQuoteIndex.value);
-
-    return next;
+  function indexAfter(index: number): number {
+    return index + 1 < quotes.value.length ? index + 1 : 0;
   }
 
-  function pauseRotation(): void {
-    if (!isPaused.value) {
-      if (quoteTimer !== null) {
-        clearInterval(quoteTimer);
-      }
-      quoteTimer = null;
-      isPaused.value = true;
+  function requestMoreIfRunningLow(): void {
+    const unseenAhead = quotes.value.length - 1 - currentQuoteIndex.value;
+
+    if (unseenAhead <= LOAD_MORE_THRESHOLD) {
+      onRunningLow();
     }
   }
 
-  function advanceQuote(): void {
-    history.value = history.value.slice(0, historyPosition.value + 1);
-    history.value.push(pickRandomIndex());
-    historyPosition.value++;
+  function step(): void {
+    if (historyPosition.value < history.value.length - 1) {
+      historyPosition.value++;
+    } else {
+      history.value.push(indexAfter(currentQuoteIndex.value));
+      historyPosition.value++;
+    }
+
     quoteChangeCount.value++;
 
     if (quoteChangeCount.value % BACKGROUND_EVERY_N_QUOTES === 0) {
       onBackgroundAdvance();
+    }
+
+    requestMoreIfRunningLow();
+  }
+
+  function startTimer(): void {
+    quoteTimer = setInterval(step, QUOTE_INTERVAL_MS);
+  }
+
+  function stopTimer(): void {
+    if (quoteTimer !== null) {
+      clearInterval(quoteTimer);
+    }
+    quoteTimer = null;
+  }
+
+  function pauseRotation(): void {
+    if (!isPaused.value) {
+      stopTimer();
+      isPaused.value = true;
     }
   }
 
   function goToNext(): void {
     pauseRotation();
-
-    if (historyPosition.value < history.value.length - 1) {
-      historyPosition.value++;
-    } else {
-      history.value.push(pickRandomIndex());
-      historyPosition.value++;
-    }
-
-    quoteChangeCount.value++;
-
-    if (quoteChangeCount.value % BACKGROUND_EVERY_N_QUOTES === 0) {
-      onBackgroundAdvance();
-    }
+    step();
   }
 
   function goToPrev(): void {
@@ -86,28 +101,22 @@ export function useQuoteRotation(
 
   function togglePause(): void {
     if (isPaused.value) {
-      quoteTimer = setInterval(advanceQuote, QUOTE_INTERVAL_MS);
+      startTimer();
       isPaused.value = false;
     } else {
-      if (quoteTimer !== null) {
-        clearInterval(quoteTimer);
-      }
-      quoteTimer = null;
-      isPaused.value = true;
+      pauseRotation();
     }
   }
 
   onMounted(() => {
-    if (quotes.length > 1) {
-      quoteTimer = setInterval(advanceQuote, QUOTE_INTERVAL_MS);
+    if (quotes.value.length > 1) {
+      startTimer();
     }
+
+    requestMoreIfRunningLow();
   });
 
-  onUnmounted(() => {
-    if (quoteTimer !== null) {
-      clearInterval(quoteTimer);
-    }
-  });
+  onUnmounted(stopTimer);
 
   return {
     currentQuote,
