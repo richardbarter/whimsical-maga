@@ -6,7 +6,7 @@ import { TableRow, TableCell } from '@/Components/ui/table';
 import { Pencil, Trash2 } from 'lucide-vue-next';
 import { formatDate, formatFileSize } from '@/lib/utils';
 
-const props = defineProps<{ background: Background }>();
+defineProps<{ background: Background }>();
 const emit = defineEmits<{
     confirmDelete: [background: Background];
     previewImage: [background: Background];
@@ -16,32 +16,38 @@ const emit = defineEmits<{
 <template>
     <TableRow>
         <TableCell>
-            <img
-                :src="background.url"
-                :alt="background.alt_text ?? ''"
-                class="h-12 w-20 cursor-pointer rounded object-cover transition-opacity hover:opacity-80"
+            <button
+                type="button"
+                class="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                :aria-label="`Preview ${background.title ?? 'background'}`"
                 @click="emit('previewImage', background)"
-            />
+            >
+                <img
+                    :src="background.url"
+                    :alt="background.alt_text ?? ''"
+                    class="h-12 w-20 rounded object-cover transition-opacity hover:opacity-80"
+                />
+            </button>
         </TableCell>
-        <TableCell class="text-sm text-gray-900">
+        <TableCell class="text-sm text-foreground">
             {{ background.title ?? '—' }}
         </TableCell>
-        <TableCell class="text-sm text-gray-600">
+        <TableCell class="text-sm text-muted-foreground">
             {{ background.dimensions ?? '—' }}
         </TableCell>
-        <TableCell class="text-sm text-gray-600">
+        <TableCell class="text-sm text-muted-foreground">
             {{ formatFileSize(background.file_size) }}
         </TableCell>
-        <TableCell class="text-sm text-gray-600">
+        <TableCell class="text-sm text-muted-foreground">
             {{ formatDate(background.created_at) }}
         </TableCell>
         <TableCell class="text-right">
             <div class="flex items-center justify-end gap-1">
-                <Link :href="route('admin.backgrounds.edit', background.id)">
-                    <Button variant="ghost" size="icon" title="Edit">
+                <Button as-child variant="ghost" size="icon">
+                    <Link :href="route('admin.backgrounds.edit', background.id)" title="Edit" aria-label="Edit background">
                         <Pencil class="h-4 w-4" />
-                    </Button>
-                </Link>
+                    </Link>
+                </Button>
                 <Button
                     variant="ghost"
                     size="icon"

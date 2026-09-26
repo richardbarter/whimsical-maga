@@ -110,6 +110,15 @@ export interface Background {
     updated_at: string;
 }
 
+export interface BackgroundFormData {
+    image: File | null;
+    title: string;
+    alt_text: string;
+    description: string;
+    credit: string;
+    source_url: string;
+}
+
 export interface ComboboxItem {
     id: number | null;
     name: string;

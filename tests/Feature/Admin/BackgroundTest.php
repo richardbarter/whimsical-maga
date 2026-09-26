@@ -7,11 +7,13 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
+use Tests\Concerns\CreatesImagesWithMetadata;
 use Tests\TestCase;
 
 class BackgroundTest extends TestCase
 {
-    use RefreshDatabase;
+    use CreatesImagesWithMetadata, RefreshDatabase;
 
     private User $admin;
 
@@ -308,5 +310,51 @@ class BackgroundTest extends TestCase
         $background->forceDelete();
 
         Storage::assertMissing($filePath);
+    }
+
+    // -------------------------------------------------------------------------
+    // Photo metadata & failure safety
+    // -------------------------------------------------------------------------
+
+    public function test_store_strips_location_metadata_from_the_uploaded_photo(): void
+    {
+        $upload = UploadedFile::fake()->createWithContent('phone-photo.jpg', $this->jpegWithMetadata('LAT-38.8977-LNG-77.0365'));
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.backgrounds.store'), $this->validPayload(['image' => $upload]))
+            ->assertRedirect(route('admin.backgrounds.index'));
+
+        $storedBytes = Storage::get(Background::first()->file_path);
+        $this->assertStringNotContainsString('LAT-38.8977-LNG-77.0365', $storedBytes);
+        $this->assertNotFalse(imagecreatefromstring($storedBytes));
+    }
+
+    public function test_store_records_the_size_of_the_stripped_file(): void
+    {
+        $upload = UploadedFile::fake()->createWithContent('phone-photo.jpg', $this->jpegWithMetadata('SECRET'));
+
+        $this->actingAs($this->admin)->post(route('admin.backgrounds.store'), $this->validPayload(['image' => $upload]));
+
+        $background = Background::first();
+        $this->assertSame(strlen(Storage::get($background->file_path)), $background->file_size);
+    }
+
+    public function test_failed_image_replacement_keeps_the_old_file_and_discards_the_new_one(): void
+    {
+        $oldPath = 'backgrounds/old-image.jpg';
+        Storage::put($oldPath, 'old image content');
+        $background = Background::factory()->create(['file_path' => $oldPath]);
+
+        Background::updating(fn () => throw new RuntimeException('Simulated database failure'));
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.backgrounds.update', $background), [
+                'image' => UploadedFile::fake()->image('replacement.jpg', 1920, 1080),
+            ])
+            ->assertServerError();
+
+        Storage::assertExists($oldPath);
+        $this->assertSame([$oldPath], Storage::files('backgrounds'));
+        $this->assertSame($oldPath, $background->fresh()->file_path);
     }
 }
