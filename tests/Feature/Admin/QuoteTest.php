@@ -2,13 +2,17 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\QuoteStatus;
+use App\Enums\SourceType;
 use App\Models\Category;
 use App\Models\Quote;
+use App\Models\Source;
 use App\Models\Speaker;
 use App\Models\SpeakerAlias;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
 use Tests\TestCase;
 
 class QuoteTest extends TestCase
@@ -114,6 +118,9 @@ class QuoteTest extends TestCase
             ->has('categories', 2)
             ->has('speakers', 2)
             ->has('quoteTypes', 6)
+            ->has('quoteStatuses', count(QuoteStatus::cases()))
+            ->has('sourceTypes', count(SourceType::cases()))
+            ->where('quoteStatuses.0', ['value' => 'draft', 'label' => 'Draft'])
         );
     }
 
@@ -295,6 +302,51 @@ class QuoteTest extends TestCase
         ]));
 
         $response->assertSessionHasErrors(['sources.0.url']);
+    }
+
+    public function test_store_validation_fails_with_invalid_source_type(): void
+    {
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'sources' => [['url' => 'https://example.com', 'source_type' => 'carrier_pigeon', 'is_primary' => false]],
+        ]))->assertSessionHasErrors(['sources.0.source_type']);
+    }
+
+    public function test_store_validation_rejects_source_urls_that_are_not_http_or_https(): void
+    {
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'sources' => [['url' => 'ftp://example.com/file', 'is_primary' => false, 'archived_url' => 'data://text/plain,hello']],
+        ]))->assertSessionHasErrors(['sources.0.url', 'sources.0.archived_url']);
+    }
+
+    public function test_store_validation_rejects_a_future_occurred_at_date(): void
+    {
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'occurred_at' => now()->addDays(3)->toDateString(),
+        ]))->assertSessionHasErrors(['occurred_at' => 'The date occurred cannot be in the future.']);
+    }
+
+    public function test_store_validation_limits_claim_and_reality_check_length(): void
+    {
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'claim' => str_repeat('a', 10001),
+            'reality_check' => str_repeat('a', 10001),
+        ]))->assertSessionHasErrors(['claim', 'reality_check']);
+    }
+
+    public function test_source_validation_errors_use_readable_field_names(): void
+    {
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'sources' => [['url' => 'not-a-url', 'is_primary' => false]],
+        ]))->assertSessionHasErrors(['sources.0.url' => 'The source URL field must be a valid URL.']);
+    }
+
+    public function test_store_saves_source_type_as_enum(): void
+    {
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'sources' => [['url' => 'https://example.com', 'source_type' => 'press_conference', 'is_primary' => true]],
+        ]));
+
+        $this->assertSame(SourceType::PressConference, Quote::first()->sources->first()->source_type);
     }
 
     public function test_store_validation_fails_with_invalid_source_archived_url(): void
@@ -521,5 +573,156 @@ class QuoteTest extends TestCase
         $this->actingAs($this->admin)->patch(route('admin.quotes.feature', $quote));
 
         $this->assertFalse($quote->fresh()->is_featured);
+    }
+
+    // -------------------------------------------------------------------------
+    // Slugs & soft deletes
+    // -------------------------------------------------------------------------
+
+    public function test_store_slug_skips_a_slug_held_by_a_soft_deleted_quote(): void
+    {
+        Quote::factory()->create(['slug' => 'one-two-three-four-five-six-seven-eight'])->delete();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.quotes.store'), $this->validPayload([
+                'text' => 'one two three four five six seven eight and more',
+            ]))
+            ->assertRedirect(route('admin.quotes.index'));
+
+        $this->assertDatabaseHas('quotes', ['slug' => 'one-two-three-four-five-six-seven-eight-1']);
+    }
+
+    public function test_update_slug_skips_a_slug_held_by_a_soft_deleted_quote(): void
+    {
+        Quote::factory()->create(['slug' => 'one-two-three-four-five-six-seven-eight'])->delete();
+        $quote = Quote::factory()->create();
+
+        $this->actingAs($this->admin)->put(route('admin.quotes.update', $quote), $this->validPayload([
+            'text' => 'one two three four five six seven eight and more',
+        ]));
+
+        $this->assertEquals('one-two-three-four-five-six-seven-eight-1', $quote->fresh()->slug);
+    }
+
+    public function test_store_creates_a_new_speaker_when_the_name_belongs_to_a_soft_deleted_speaker(): void
+    {
+        Speaker::factory()->create(['name' => 'Ghost Speaker', 'slug' => 'ghost-speaker'])->delete();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.quotes.store'), $this->validPayload(['speaker' => 'Ghost Speaker']))
+            ->assertRedirect(route('admin.quotes.index'));
+
+        $this->assertEquals('ghost-speaker-1', Quote::first()->speaker->slug);
+    }
+
+    // -------------------------------------------------------------------------
+    // Tag & category resolution
+    // -------------------------------------------------------------------------
+
+    public function test_store_reuses_an_existing_tag_when_a_new_name_differs_only_by_case(): void
+    {
+        $existing = Tag::factory()->create(['name' => 'Economy']);
+
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'tags' => [['id' => null, 'name' => 'economy']],
+        ]));
+
+        $this->assertSame(1, Tag::count());
+        $this->assertEquals([$existing->id], Quote::first()->tags->pluck('id')->all());
+    }
+
+    public function test_store_gives_a_new_tag_a_unique_slug_when_its_name_slugifies_like_an_existing_tag(): void
+    {
+        Tag::factory()->create(['name' => 'Jan 6', 'slug' => 'jan-6']);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.quotes.store'), $this->validPayload([
+                'tags' => [['id' => null, 'name' => 'Jan. 6']],
+            ]))
+            ->assertRedirect(route('admin.quotes.index'));
+
+        $this->assertDatabaseHas('tags', ['name' => 'Jan. 6', 'slug' => 'jan-6-1']);
+    }
+
+    public function test_store_reuses_an_existing_category_when_a_new_name_differs_only_by_case(): void
+    {
+        $existing = Category::factory()->create(['name' => 'Foreign Policy']);
+
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'categories' => [['id' => null, 'name' => 'foreign policy']],
+        ]));
+
+        $this->assertSame(1, Category::count());
+        $this->assertEquals([$existing->id], Quote::first()->categories->pluck('id')->all());
+    }
+
+    public function test_store_validation_fails_with_a_nonexistent_tag_id(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.quotes.store'), $this->validPayload([
+                'tags' => [['id' => 99999, 'name' => 'Deleted tag']],
+            ]))
+            ->assertSessionHasErrors('tags.0.id');
+
+        $this->assertDatabaseCount('quotes', 0);
+    }
+
+    public function test_store_validation_fails_with_a_nonexistent_category_id(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.quotes.store'), $this->validPayload([
+                'categories' => [['id' => 99999, 'name' => 'Deleted category']],
+            ]))
+            ->assertSessionHasErrors('categories.0.id');
+
+        $this->assertDatabaseCount('quotes', 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // Atomic writes
+    // -------------------------------------------------------------------------
+
+    public function test_store_rolls_back_the_quote_when_saving_its_sources_fails(): void
+    {
+        Source::creating(fn () => throw new RuntimeException('Simulated insert failure'));
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.quotes.store'), $this->validPayload([
+                'sources' => [['url' => 'https://example.com/source', 'is_primary' => true]],
+            ]))
+            ->assertServerError();
+
+        $this->assertDatabaseCount('quotes', 0);
+    }
+
+    public function test_update_keeps_the_original_quote_and_sources_when_saving_new_sources_fails(): void
+    {
+        $quote = Quote::factory()->create(['text' => 'Original text']);
+        $quote->sources()->create(['url' => 'https://example.com/original', 'is_primary' => true]);
+
+        Source::creating(fn () => throw new RuntimeException('Simulated insert failure'));
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.quotes.update', $quote), $this->validPayload([
+                'text' => 'Changed text',
+                'sources' => [['url' => 'https://example.com/replacement', 'is_primary' => true]],
+            ]))
+            ->assertServerError();
+
+        $this->assertEquals('Original text', $quote->fresh()->text);
+        $this->assertEquals(['https://example.com/original'], $quote->sources()->pluck('url')->all());
+    }
+
+    public function test_store_ignores_a_quote_id_injected_into_a_source(): void
+    {
+        $otherQuote = Quote::factory()->create();
+
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'text' => 'A brand new quote with an injected source',
+            'sources' => [['url' => 'https://example.com/source', 'is_primary' => true, 'quote_id' => $otherQuote->id]],
+        ]));
+
+        $this->assertCount(0, $otherQuote->sources);
+        $this->assertCount(1, Quote::where('text', 'A brand new quote with an injected source')->first()->sources);
     }
 }

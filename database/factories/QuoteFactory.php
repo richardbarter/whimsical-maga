@@ -2,13 +2,14 @@
 
 namespace Database\Factories;
 
+use App\Enums\QuoteStatus;
 use App\Models\Quote;
 use App\Models\Speaker;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Quote>
+ * @extends Factory<Quote>
  */
 class QuoteFactory extends Factory
 {
@@ -25,7 +26,7 @@ class QuoteFactory extends Factory
             'text' => $text,
             'speaker_id' => Speaker::factory(),
             'slug' => Quote::generateSlug($text),
-            'status' => 'draft',
+            'status' => QuoteStatus::Draft,
             'quote_type' => 'spoken',
             'is_verified' => false,
             'is_featured' => false,
@@ -43,7 +44,7 @@ class QuoteFactory extends Factory
     public function published(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'published',
+            'status' => QuoteStatus::Published,
             'published_at' => now(),
         ]);
     }

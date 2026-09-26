@@ -1,3 +1,19 @@
+export type QuoteStatus = 'published' | 'draft' | 'pending';
+
+export type QuoteTypeValue = 'spoken' | 'written' | 'testimony' | 'alleged' | 'paraphrased' | 'other';
+
+/** A {value, label} pair for a select, as produced by the PHP enums' options() methods. */
+export interface SelectOption<T extends string = string> {
+    value: T;
+    label: string;
+}
+
+export type QuoteTypeOption = SelectOption<QuoteTypeValue>;
+
+export type QuoteStatusOption = SelectOption<QuoteStatus>;
+
+export type SourceTypeOption = SelectOption;
+
 export interface SpeakerAlias {
     id: number;
     speaker_id: number;
@@ -58,8 +74,8 @@ export interface Quote {
     is_verified: boolean;
     is_featured: boolean;
     view_count: number;
-    status: 'published' | 'draft' | 'pending';
-    quote_type?: 'spoken' | 'written' | 'testimony' | 'alleged' | 'paraphrased' | 'other';
+    status: QuoteStatus;
+    quote_type?: QuoteTypeValue;
     quote_type_note?: string;
     claim: string | null;
     reality_check: string | null;
@@ -70,6 +86,13 @@ export interface Quote {
     categories?: Category[];
     created_at: string;
     updated_at: string;
+}
+
+/** Cursor for the home page's batched quote feed. */
+export interface QuoteFeed {
+    seed: number;
+    page: number;
+    hasMore: boolean;
 }
 
 export interface Background {
@@ -85,11 +108,6 @@ export interface Background {
     dimensions?: string;
     created_at: string;
     updated_at: string;
-}
-
-export interface QuoteTypeOption {
-    value: 'spoken' | 'written' | 'testimony' | 'alleged' | 'paraphrased' | 'other';
-    label: string;
 }
 
 export interface ComboboxItem {
@@ -118,7 +136,7 @@ export interface QuoteFormData {
     occurred_at: string;
     is_verified: boolean;
     is_featured: boolean;
-    status: 'published' | 'draft' | 'pending';
+    status: QuoteStatus;
     tags: ComboboxItem[];
     categories: ComboboxItem[];
     sources: SourceForm[];

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SourceForm } from '@/types'
+import type { SourceForm, SourceTypeOption } from '@/types'
 import { Button } from '@/Components/ui/button'
 import { Input } from '@/Components/ui/input'
 import { Label } from '@/Components/ui/label'
@@ -10,6 +10,7 @@ import { Trash2 } from 'lucide-vue-next'
 const props = defineProps<{
     source: SourceForm
     index: number
+    sourceTypes: SourceTypeOption[]
     errors: Record<string, string>
 }>()
 
@@ -21,19 +22,6 @@ const emit = defineEmits<{
 function update(field: keyof SourceForm, value: string | number | boolean) {
     emit('update:source', { ...props.source, [field]: value })
 }
-
-const sourceTypes = [
-    { value: 'tweet', label: 'Tweet' },
-    { value: 'article', label: 'Article' },
-    { value: 'video', label: 'Video' },
-    { value: 'speech', label: 'Speech' },
-    { value: 'interview', label: 'Interview' },
-    { value: 'press_conference', label: 'Press Conference' },
-    { value: 'rally', label: 'Rally' },
-    { value: 'social_media', label: 'Social Media' },
-    { value: 'book', label: 'Book' },
-    { value: 'other', label: 'Other' },
-]
 </script>
 
 <template>
@@ -44,7 +32,8 @@ const sourceTypes = [
                 type="button"
                 variant="ghost"
                 size="sm"
-                @click="$emit('remove')"
+                :aria-label="`Remove source ${index + 1}`"
+                @click="emit('remove')"
             >
                 <Trash2 class="h-4 w-4 text-destructive" />
             </Button>

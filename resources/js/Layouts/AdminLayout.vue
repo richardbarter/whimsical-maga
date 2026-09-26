@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
-import Button from '@/Components/ui/button/Button.vue';
+import { onUnmounted, ref } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
+import { Button } from '@/Components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,15 +10,13 @@ import {
     DropdownMenuTrigger,
 } from '@/Components/ui/dropdown-menu';
 import { ChevronDown, LogOut, Menu, User, X } from 'lucide-vue-next';
-import type { PageProps } from '@/types';
+import { useFlashMessages } from '@/composables/useFlashMessages';
 
 interface NavLink {
     label: string;
     routeName: string;
     pattern: string;
 }
-
-const FLASH_DURATION_MS = 4000;
 
 const navLinks: NavLink[] = [
     { label: 'Dashboard', routeName: 'admin.dashboard', pattern: 'admin.dashboard' },
@@ -30,25 +28,12 @@ const navLinks: NavLink[] = [
 ];
 
 const showingNavigationDropdown = ref(false);
-const page = usePage<PageProps>();
-const flash = ref<{ success?: string; error?: string }>({});
-let flashTimeout: ReturnType<typeof setTimeout> | null = null;
+const { flash } = useFlashMessages();
 
-watch(
-    () => page.props.flash,
-    (newFlash) => {
-        flash.value = { ...newFlash };
-        if (flashTimeout) clearTimeout(flashTimeout);
-        if (newFlash.success || newFlash.error) {
-            flashTimeout = setTimeout(() => {
-                flash.value = {};
-            }, FLASH_DURATION_MS);
-        }
-    },
-    { immediate: true },
-);
+// Layouts remount on every visit here, so the listener must be removed each time.
+const removeNavigateListener = router.on('navigate', () => { showingNavigationDropdown.value = false; });
 
-router.on('navigate', () => { showingNavigationDropdown.value = false; });
+onUnmounted(removeNavigateListener);
 </script>
 
 <template>

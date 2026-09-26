@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Tag, Category, Speaker, QuoteTypeOption } from '@/types';
+import type { Tag, Category, Speaker, QuoteTypeOption, QuoteStatusOption, SourceTypeOption } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import QuoteForm from './components/QuoteForm.vue';
@@ -9,6 +9,8 @@ defineProps<{
     categories: Category[];
     speakers: Speaker[];
     quoteTypes: QuoteTypeOption[];
+    quoteStatuses: QuoteStatusOption[];
+    sourceTypes: SourceTypeOption[];
 }>();
 </script>
 
@@ -18,12 +20,12 @@ defineProps<{
     <AdminLayout>
         <template #header>
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                <h2 class="text-xl font-semibold leading-tight text-foreground">
                     Add Quote
                 </h2>
                 <Link
                     :href="route('admin.quotes.index')"
-                    class="text-sm text-gray-600 hover:text-gray-900"
+                    class="text-sm text-muted-foreground hover:text-foreground"
                 >
                     &larr; Back to Quotes
                 </Link>
@@ -37,6 +39,8 @@ defineProps<{
                     :categories="categories"
                     :speakers="speakers"
                     :quote-types="quoteTypes"
+                    :quote-statuses="quoteStatuses"
+                    :source-types="sourceTypes"
                     submit-label="Create Quote"
                     submit-method="post"
                     :submit-route="route('admin.quotes.store')"

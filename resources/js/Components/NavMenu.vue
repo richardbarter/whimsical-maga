@@ -47,10 +47,10 @@ const { menuOpen, menuVisible, boxPhases, toggle } = useNavMenuAnimation(
     <!-- Menu boxes — crawl out below the trigger -->
     <div v-if="menuVisible" class="mt-2 flex flex-col gap-0.5">
       <component
-        :is="item.href ? Link : 'button'"
+        :is="item.routeName ? Link : 'button'"
         v-for="(item, index) in NAV_ITEMS"
         :key="index"
-        :href="item.href"
+        :href="item.routeName ? route(item.routeName) : undefined"
         class="nav-box relative"
         :class="{
           'nav-box--entering': boxPhases[index] === 'entering',

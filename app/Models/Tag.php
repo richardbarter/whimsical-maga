@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUniqueSlug;
+use App\Models\Concerns\ResolvesByName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Support\Str;
 
 class Tag extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUniqueSlug, ResolvesByName;
 
     protected $fillable = [
         'name',
@@ -17,26 +18,24 @@ class Tag extends Model
         'description',
     ];
 
-    /**
-     * Boot the model.
-     */
-    protected static function boot()
+    protected static function booted(): void
     {
-        parent::boot();
-
-        static::creating(function ($tag) {
+        static::creating(function (Tag $tag): void {
             if (empty($tag->slug)) {
-                $tag->slug = Str::slug($tag->name);
+                $tag->slug = static::generateUniqueSlug($tag->name);
             }
         });
     }
 
     /**
      * Get the quotes that have this tag.
+     *
+     * No withTimestamps(): quote_tag has no updated_at column, and Quote::tags()
+     * deliberately doesn't track pivot timestamps either.
      */
     public function quotes(): BelongsToMany
     {
-        return $this->belongsToMany(Quote::class)->withTimestamps();
+        return $this->belongsToMany(Quote::class);
     }
 
     /**

@@ -1,13 +1,13 @@
 <?php
 
 use App\Http\Controllers\Admin\BackgroundController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\QuoteController;
 use App\Http\Controllers\Admin\SavedContextController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,50 +36,22 @@ Route::middleware('auth')->group(function () {
 */
 
 Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
-    // Dashboard
-    Route::get('/', function () {
-        return Inertia::render('Admin/Dashboard');
-    })->name('dashboard');
+    Route::get('/', DashboardController::class)->name('dashboard');
 
-    // Quotes
-    Route::get('/quotes', [QuoteController::class, 'index'])->name('quotes.index');
-    Route::get('/quotes/create', [QuoteController::class, 'create'])->name('quotes.create');
-    Route::post('/quotes', [QuoteController::class, 'store'])->name('quotes.store');
-    Route::get('/quotes/{quote}/edit', [QuoteController::class, 'edit'])->name('quotes.edit');
-    Route::put('/quotes/{quote}', [QuoteController::class, 'update'])->name('quotes.update');
-    Route::delete('/quotes/{quote}', [QuoteController::class, 'destroy'])->name('quotes.destroy');
+    // Quotes (quick-action toggles use dedicated PATCH routes to keep QuoteRequest clean)
+    Route::resource('quotes', QuoteController::class)->except('show');
     Route::patch('/quotes/{quote}/verify', [QuoteController::class, 'toggleVerified'])->name('quotes.verify');
     Route::patch('/quotes/{quote}/feature', [QuoteController::class, 'toggleFeature'])->name('quotes.feature');
 
-    // Backgrounds
-    Route::get('/backgrounds', [BackgroundController::class, 'index'])->name('backgrounds.index');
-    Route::get('/backgrounds/create', [BackgroundController::class, 'create'])->name('backgrounds.create');
-    Route::post('/backgrounds', [BackgroundController::class, 'store'])->name('backgrounds.store');
-    Route::get('/backgrounds/{background}/edit', [BackgroundController::class, 'edit'])->name('backgrounds.edit');
-    Route::put('/backgrounds/{background}', [BackgroundController::class, 'update'])->name('backgrounds.update');
-    Route::delete('/backgrounds/{background}', [BackgroundController::class, 'destroy'])->name('backgrounds.destroy');
+    Route::resource('backgrounds', BackgroundController::class)->except('show');
 
     // Saved Contexts (search must come before resource to avoid wildcard collision)
     Route::get('/saved-contexts/search', [SavedContextController::class, 'search'])->name('saved-contexts.search');
-    Route::resource('saved-contexts', SavedContextController::class)->except(['show']);
+    Route::resource('saved-contexts', SavedContextController::class)->except('show');
 
-    // Tags (placeholder routes)
-    Route::get('/tags', function () {
-        return Inertia::render('Admin/Tags/Index');
-    })->name('tags.index');
-
-    Route::get('/tags/create', function () {
-        return Inertia::render('Admin/Tags/Index');
-    })->name('tags.create');
-
-    // Categories (placeholder routes)
-    Route::get('/categories', function () {
-        return Inertia::render('Admin/Categories/Index');
-    })->name('categories.index');
-
-    Route::get('/categories/create', function () {
-        return Inertia::render('Admin/Categories/Index');
-    })->name('categories.create');
+    // Tags & Categories (management pages not built yet)
+    Route::inertia('/tags', 'Admin/Tags/Index')->name('tags.index');
+    Route::inertia('/categories', 'Admin/Categories/Index')->name('categories.index');
 });
 
 require __DIR__.'/auth.php';

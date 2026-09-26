@@ -2,21 +2,25 @@
 import NavMenu from "@/Components/NavMenu.vue";
 import PublicLayout from "@/Layouts/PublicLayout.vue";
 import { useBackgroundCrossfade } from "@/composables/useBackgroundCrossfade";
+import { useQuoteFeed } from "@/composables/useQuoteFeed";
 import { useQuoteRotation } from "@/composables/useQuoteRotation";
-import type { Background, Quote } from "@/types";
+import type { Background, Quote, QuoteFeed } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { Head } from "@inertiajs/vue3";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
-import { useSwipe } from "@vueuse/core";
-import { onMounted, onUnmounted, ref } from "vue";
+import { useEventListener, useSwipe } from "@vueuse/core";
+import { ref, toRef } from "vue";
 
 const props = defineProps<{
   quotes: Quote[];
+  quoteFeed: QuoteFeed;
   backgrounds: Background[];
 }>();
 
 const { layers, activeLayer, currentBackground, transitionToNext } =
   useBackgroundCrossfade(props.backgrounds);
+
+const { loadMore: loadMoreQuotes } = useQuoteFeed(() => props.quoteFeed);
 
 const {
   currentQuote,
@@ -26,7 +30,10 @@ const {
   goToNext,
   goToPrev,
   canGoBack,
-} = useQuoteRotation(props.quotes, transitionToNext);
+} = useQuoteRotation(toRef(props, "quotes"), {
+  onBackgroundAdvance: transitionToNext,
+  onRunningLow: loadMoreQuotes,
+});
 
 const container = ref<HTMLElement | null>(null);
 const cardRef = ref<HTMLElement | null>(null);
@@ -84,10 +91,20 @@ useSwipe(container, {
   },
 });
 
+function backgroundStyle(url: string): Record<string, string> | undefined {
+  return url ? { backgroundImage: `url(${JSON.stringify(url)})` } : undefined;
+}
+
 function onKeyDown(e: KeyboardEvent): void {
+  // Let focused controls handle their own keys (e.g. Space on a button).
+  if (e.target instanceof Element && e.target.closest("button, a, input, textarea")) return;
+
   if (e.key === "ArrowLeft") goToPrev();
   if (e.key === "ArrowRight") goToNext();
-  if (e.key === " ") togglePause();
+  if (e.key === " ") {
+    e.preventDefault();
+    togglePause();
+  }
 }
 
 let lastTap = 0;
@@ -98,8 +115,7 @@ function onTouchEnd(): void {
   lastTap = now;
 }
 
-onMounted(() => window.addEventListener("keydown", onKeyDown));
-onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
+useEventListener(window, "keydown", onKeyDown);
 </script>
 
 <template>
@@ -115,13 +131,13 @@ onUnmounted(() => window.removeEventListener("keydown", onKeyDown));
       <div
         class="absolute inset-0 bg-cover bg-center transition-opacity duration-1500"
         :class="activeLayer === 0 ? 'opacity-100' : 'opacity-0'"
-        :style="layers[0].bg ? `background-image: url('${layers[0].bg}')` : ''"
+        :style="backgroundStyle(layers[0].bg)"
       />
       <!-- Background layer 1 -->
       <div
         class="absolute inset-0 bg-cover bg-center transition-opacity duration-1500"
         :class="activeLayer === 1 ? 'opacity-100' : 'opacity-0'"
-        :style="layers[1].bg ? `background-image: url('${layers[1].bg}')` : ''"
+        :style="backgroundStyle(layers[1].bg)"
       />
 
       <!-- Nav menu + pause/play -->

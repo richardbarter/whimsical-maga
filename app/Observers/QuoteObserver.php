@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\QuoteStatus;
 use App\Models\Quote;
 
 class QuoteObserver
@@ -17,7 +18,7 @@ class QuoteObserver
      */
     public function saving(Quote $quote): void
     {
-        if ($quote->status === 'published' && is_null($quote->published_at)) {
+        if ($quote->status === QuoteStatus::Published && is_null($quote->published_at)) {
             $quote->published_at = now();
         }
     }

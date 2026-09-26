@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { Quote } from '@/types';
-import { router } from '@inertiajs/vue3';
-import { Link } from '@inertiajs/vue3';
-import { formatDate } from '@/lib/utils';
+import { Link, router } from '@inertiajs/vue3';
+import { formatDate, truncate } from '@/lib/utils';
 import { Button } from '@/Components/ui/button';
 import { Badge } from '@/Components/ui/badge';
 import { TableRow, TableCell } from '@/Components/ui/table';
@@ -17,10 +16,6 @@ const props = defineProps<{ quote: Quote }>();
 const emit = defineEmits<{ confirmDelete: [quote: Quote] }>();
 
 const TRUNCATE_LENGTH = 100;
-
-function truncate(text: string, length = TRUNCATE_LENGTH): string {
-    return text.length > length ? text.slice(0, length) + '…' : text;
-}
 
 function statusVariant(status: Quote['status']): 'default' | 'secondary' | 'outline' {
     if (status === 'published') return 'default';
@@ -40,10 +35,10 @@ function toggleFeature() {
 
 <template>
     <TableRow>
-        <TableCell class="max-w-xs text-sm text-gray-900">
+        <TableCell class="max-w-xs text-sm text-foreground">
             <Tooltip v-if="quote.text.length > TRUNCATE_LENGTH">
                 <TooltipTrigger class="cursor-default text-left">
-                    {{ truncate(quote.text) }}
+                    {{ truncate(quote.text, TRUNCATE_LENGTH) }}
                 </TooltipTrigger>
                 <TooltipContent class="max-w-sm whitespace-pre-wrap text-xs leading-relaxed">
                     {{ quote.text }}
@@ -51,7 +46,7 @@ function toggleFeature() {
             </Tooltip>
             <template v-else>{{ quote.text }}</template>
         </TableCell>
-        <TableCell class="text-sm text-gray-600">
+        <TableCell class="text-sm text-muted-foreground">
             {{ quote.speaker?.name ?? '—' }}
         </TableCell>
         <TableCell>
@@ -74,19 +69,19 @@ function toggleFeature() {
             <Check v-if="quote.is_featured" class="mx-auto h-4 w-4 text-green-600" />
             <Minus v-else class="mx-auto h-4 w-4 text-muted-foreground" />
         </TableCell>
-        <TableCell class="text-sm text-gray-600">
+        <TableCell class="text-sm text-muted-foreground">
             {{ quote.occurred_at ? formatDate(quote.occurred_at) : '—' }}
         </TableCell>
-        <TableCell class="text-sm text-gray-600">
+        <TableCell class="text-sm text-muted-foreground">
             {{ formatDate(quote.created_at) }}
         </TableCell>
         <TableCell class="text-right">
             <div class="flex items-center justify-end gap-1">
-                <Link :href="route('admin.quotes.edit', quote.id)">
-                    <Button variant="ghost" size="icon" title="Edit">
+                <Button as-child variant="ghost" size="icon">
+                    <Link :href="route('admin.quotes.edit', quote.id)" title="Edit" aria-label="Edit quote">
                         <Pencil class="h-4 w-4" />
-                    </Button>
-                </Link>
+                    </Link>
+                </Button>
                 <Button
                     variant="ghost"
                     size="icon"

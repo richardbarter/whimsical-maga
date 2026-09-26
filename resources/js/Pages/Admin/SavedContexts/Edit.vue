@@ -22,12 +22,12 @@ const initialValues: SavedContextFormData = {
     <AdminLayout>
         <template #header>
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                <h2 class="text-xl font-semibold leading-tight text-foreground">
                     Edit Saved Context
                 </h2>
                 <Link
                     :href="route('admin.saved-contexts.index')"
-                    class="text-sm text-gray-600 hover:text-gray-900"
+                    class="text-sm text-muted-foreground hover:text-foreground"
                 >
                     &larr; Back to Saved Contexts
                 </Link>
