@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\RoleName;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,11 +13,14 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
+     *
+     * role_id is deliberately excluded so a request can never grant itself a role;
+     * assign roles explicitly with $user->role()->associate($role).
      *
      * @var list<string>
      */
@@ -23,7 +28,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role_id',
     ];
 
     /**
@@ -70,7 +74,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->role->name === 'admin';
+        return $this->hasRole(RoleName::Admin);
     }
 
     /**
@@ -78,13 +82,13 @@ class User extends Authenticatable
      */
     public function isModerator(): bool
     {
-        return $this->role->name === 'moderator';
+        return $this->hasRole(RoleName::Moderator);
     }
 
     /**
      * Check if the user has a specific role.
      */
-    public function hasRole(string $role): bool
+    public function hasRole(RoleName $role): bool
     {
         return $this->role->name === $role;
     }

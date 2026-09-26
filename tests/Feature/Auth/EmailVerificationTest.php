@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
@@ -20,6 +21,36 @@ class EmailVerificationTest extends TestCase
         $response = $this->actingAs($user)->get('/verify-email');
 
         $response->assertStatus(200);
+    }
+
+    public function test_verified_user_visiting_verification_screen_is_redirected_home(): void
+    {
+        $user = User::factory()->asUser()->create();
+
+        $this->actingAs($user)
+            ->get('/verify-email')
+            ->assertRedirect(route('home', absolute: false));
+    }
+
+    public function test_verified_admin_visiting_verification_screen_is_redirected_to_admin_dashboard(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get('/verify-email')
+            ->assertRedirect(route('admin.dashboard', absolute: false));
+    }
+
+    public function test_verified_user_requesting_verification_email_is_redirected_without_sending(): void
+    {
+        Notification::fake();
+        $user = User::factory()->asUser()->create();
+
+        $this->actingAs($user)
+            ->post('/email/verification-notification')
+            ->assertRedirect(route('home', absolute: false));
+
+        Notification::assertNothingSent();
     }
 
     public function test_email_can_be_verified(): void

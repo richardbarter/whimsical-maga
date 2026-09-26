@@ -48,4 +48,17 @@ class PasswordUpdateTest extends TestCase
             ->assertSessionHasErrors('current_password')
             ->assertRedirect('/profile');
     }
+
+    public function test_password_update_attempts_are_throttled(): void
+    {
+        $user = User::factory()->create();
+
+        for ($attempt = 0; $attempt < 6; $attempt++) {
+            $this->actingAs($user)->put('/password', ['current_password' => 'wrong-password']);
+        }
+
+        $this->actingAs($user)
+            ->put('/password', ['current_password' => 'wrong-password'])
+            ->assertTooManyRequests();
+    }
 }

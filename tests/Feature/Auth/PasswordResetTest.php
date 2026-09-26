@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -59,15 +60,59 @@ class PasswordResetTest extends TestCase
             $response = $this->post('/reset-password', [
                 'token' => $notification->token,
                 'email' => $user->email,
-                'password' => 'password',
-                'password_confirmation' => 'password',
+                'password' => 'a-brand-new-password',
+                'password_confirmation' => 'a-brand-new-password',
             ]);
 
             $response
                 ->assertSessionHasNoErrors()
                 ->assertRedirect(route('login'));
 
+            // Stored hashed by the User model's "hashed" cast, not as plain text.
+            $storedPassword = $user->refresh()->password;
+            $this->assertNotSame('a-brand-new-password', $storedPassword);
+            $this->assertTrue(Hash::check('a-brand-new-password', $storedPassword));
+
             return true;
         });
+    }
+
+    public function test_link_request_response_is_identical_for_known_and_unknown_emails(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+
+        $knownResponse = $this->from('/forgot-password')->post('/forgot-password', ['email' => $user->email]);
+        $unknownResponse = $this->from('/forgot-password')->post('/forgot-password', ['email' => 'nobody@example.com']);
+
+        $knownResponse->assertSessionHasNoErrors()->assertRedirect('/forgot-password');
+        $unknownResponse->assertSessionHasNoErrors()->assertRedirect('/forgot-password');
+        $this->assertSame($knownResponse->getSession()->get('status'), $unknownResponse->getSession()->get('status'));
+    }
+
+    public function test_repeated_link_requests_do_not_reveal_that_the_account_exists(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+
+        $this->post('/forgot-password', ['email' => $user->email]);
+        $this->from('/forgot-password')
+            ->post('/forgot-password', ['email' => $user->email])
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_reset_errors_do_not_reveal_whether_the_email_has_an_account(): void
+    {
+        $user = User::factory()->create();
+
+        $payload = ['token' => 'not-a-real-token', 'password' => 'password', 'password_confirmation' => 'password'];
+
+        $known = $this->post('/reset-password', [...$payload, 'email' => $user->email]);
+        $unknown = $this->post('/reset-password', [...$payload, 'email' => 'nobody@example.com']);
+
+        $this->assertSame(
+            $known->getSession()->get('errors')->first('email'),
+            $unknown->getSession()->get('errors')->first('email'),
+        );
     }
 }

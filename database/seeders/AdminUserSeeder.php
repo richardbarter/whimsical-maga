@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\RoleName;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -13,17 +14,18 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $adminRole = Role::where('name', 'admin')->first();
+        $adminRole = Role::where('name', RoleName::Admin)->firstOrFail();
 
-        $adminPassword = env('ADMIN_PASSWORD')
+        $adminPassword = config('auth.admin_account.password')
             ?: throw new \RuntimeException('ADMIN_PASSWORD environment variable must be set before running AdminUserSeeder.');
 
-        User::create([
+        $admin = new User([
             'name' => 'Admin',
-            'email' => env('ADMIN_EMAIL', 'admin@example.com'),
+            'email' => config('auth.admin_account.email'),
             'password' => bcrypt($adminPassword),
-            'role_id' => $adminRole->id,
-            'email_verified_at' => now(),
         ]);
+        $admin->role()->associate($adminRole);
+        $admin->email_verified_at = now();
+        $admin->save();
     }
 }
