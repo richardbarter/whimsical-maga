@@ -3,14 +3,16 @@ import type {
   Tag,
   Category,
   Speaker,
-  SourceForm,
   QuoteFormData,
+  QuoteStatusOption,
   QuoteTypeOption,
+  SourceTypeOption,
 } from "@/types";
-import { Link, useForm } from "@inertiajs/vue3";
+import { Link, router, useForm } from "@inertiajs/vue3";
 import { DatePicker } from "@/Components/ui/date-picker";
 import { ComboboxMultiSelect } from "@/Components/ui/combobox-multi-select";
 import { Button } from "@/Components/ui/button";
+import { FormField } from "@/Components/ui/form-field";
 import { Input } from "@/Components/ui/input";
 import { Textarea } from "@/Components/ui/textarea";
 import { Label } from "@/Components/ui/label";
@@ -34,6 +36,8 @@ const props = defineProps<{
   categories: Category[];
   speakers: Speaker[];
   quoteTypes: QuoteTypeOption[];
+  quoteStatuses: QuoteStatusOption[];
+  sourceTypes: SourceTypeOption[];
   initialValues?: Partial<QuoteFormData>;
   submitLabel: string;
   submitMethod: "post" | "put";
@@ -73,6 +77,19 @@ function removeSource(index: number) {
   form.sources.splice(index, 1);
 }
 
+/** The first error for a field or any of its nested items (e.g. "tags.0.id"). */
+function firstErrorFor(field: "tags" | "categories"): string | undefined {
+  const errors = form.errors as Record<string, string>;
+  const key = Object.keys(errors).find((name) => name === field || name.startsWith(`${field}.`));
+
+  return key ? errors[key] : undefined;
+}
+
+/** A saved context may have created new tags; refresh the options so they appear here too. */
+function refreshTagOptions() {
+  router.reload({ only: ["tags"] });
+}
+
 function submit() {
   if (props.submitMethod === "post") {
     form.post(props.submitRoute);
@@ -90,30 +107,24 @@ function submit() {
         <CardTitle>Quote Content</CardTitle>
       </CardHeader>
       <CardContent class="space-y-4">
-        <div class="space-y-2">
-          <Label for="text">Quote Text *</Label>
+        <FormField label="Quote Text *" for="text" :error="form.errors.text">
           <Textarea
             id="text"
             v-model="form.text"
             placeholder="Enter the quote text..."
             class="min-h-[120px]"
           />
-          <p v-if="form.errors.text" class="text-sm text-destructive">
-            {{ form.errors.text }}
-          </p>
-        </div>
+        </FormField>
 
-        <div class="space-y-2">
-          <Label>Said By *</Label>
+        <FormField label="Said By *" for="speaker" :error="form.errors.speaker">
           <SpeakerAutocomplete
             v-model="form.speaker"
+            input-id="speaker"
             :speakers="speakers"
-            :error="form.errors.speaker"
           />
-        </div>
+        </FormField>
 
-        <div class="space-y-2">
-          <Label>Quote Type *</Label>
+        <FormField label="Quote Type *" :error="form.errors.quote_type">
           <Select v-model="form.quote_type">
             <SelectTrigger>
               <SelectValue placeholder="How was this quote delivered?" />
@@ -128,32 +139,32 @@ function submit() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <p v-if="form.errors.quote_type" class="text-sm text-destructive">
-            {{ form.errors.quote_type }}
-          </p>
-        </div>
+        </FormField>
 
-        <div v-if="form.quote_type === 'other'" class="space-y-2">
-          <Label for="quote_type_note">Describe the type</Label>
+        <FormField
+          v-if="form.quote_type === 'other'"
+          label="Describe the type"
+          for="quote_type_note"
+          :error="form.errors.quote_type_note"
+        >
           <Input
             id="quote_type_note"
             v-model="form.quote_type_note"
             placeholder="e.g. satirical misquote, composite paraphrase..."
           />
-          <p
-            v-if="form.errors.quote_type_note"
-            class="text-sm text-destructive"
-          >
-            {{ form.errors.quote_type_note }}
-          </p>
-        </div>
+        </FormField>
 
+        <!-- Context has library buttons beside its label, so it lays out its own header -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
             <Label for="context">Context</Label>
             <div class="flex items-center gap-2">
               <SavedContextPicker @select="form.context = $event" />
-              <SaveContextDialog :current-body="form.context" :tags="tags" />
+              <SaveContextDialog
+                :current-body="form.context"
+                :tags="tags"
+                @saved="refreshTagOptions"
+              />
             </div>
           </div>
           <Textarea
@@ -167,25 +178,17 @@ function submit() {
           </p>
         </div>
 
-        <div class="space-y-2">
-          <Label for="location">Location</Label>
+        <FormField label="Location" for="location" :error="form.errors.location">
           <Input
             id="location"
             v-model="form.location"
             placeholder="Where was this said? (e.g. White House Press Briefing, Twitter)"
           />
-          <p v-if="form.errors.location" class="text-sm text-destructive">
-            {{ form.errors.location }}
-          </p>
-        </div>
+        </FormField>
 
-        <div class="space-y-2">
-          <Label>Date Occurred</Label>
+        <FormField label="Date Occurred" :error="form.errors.occurred_at">
           <DatePicker v-model="form.occurred_at" placeholder="Pick a date" />
-          <p v-if="form.errors.occurred_at" class="text-sm text-destructive">
-            {{ form.errors.occurred_at }}
-          </p>
-        </div>
+        </FormField>
       </CardContent>
     </Card>
 
@@ -195,8 +198,7 @@ function submit() {
         <CardTitle>Claim & Reality Check</CardTitle>
       </CardHeader>
       <CardContent class="space-y-4">
-        <div class="space-y-2">
-          <Label for="claim">Claim</Label>
+        <FormField label="Claim" for="claim" :error="form.errors.claim">
           <p class="text-sm text-muted-foreground">
             The assertion or justification being made — what is this quote
             trying to support or prove?
@@ -207,13 +209,9 @@ function submit() {
             placeholder="Describe the claim being made..."
             class="min-h-[100px]"
           />
-          <p v-if="form.errors.claim" class="text-sm text-destructive">
-            {{ form.errors.claim }}
-          </p>
-        </div>
+        </FormField>
 
-        <div class="space-y-2">
-          <Label for="reality_check">Reality Check</Label>
+        <FormField label="Reality Check" for="reality_check" :error="form.errors.reality_check">
           <p class="text-sm text-muted-foreground">
             An analysis of the claim — what is true, what is false, and what is
             missing context?
@@ -224,10 +222,7 @@ function submit() {
             placeholder="Break down what is accurate, misleading, or false..."
             class="min-h-[120px]"
           />
-          <p v-if="form.errors.reality_check" class="text-sm text-destructive">
-            {{ form.errors.reality_check }}
-          </p>
-        </div>
+        </FormField>
       </CardContent>
     </Card>
 
@@ -237,22 +232,22 @@ function submit() {
         <CardTitle>Status & Flags</CardTitle>
       </CardHeader>
       <CardContent class="space-y-4">
-        <div class="space-y-2">
-          <Label>Status *</Label>
+        <FormField label="Status *" :error="form.errors.status">
           <Select v-model="form.status">
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
+              <SelectItem
+                v-for="status in quoteStatuses"
+                :key="status.value"
+                :value="status.value"
+              >
+                {{ status.label }}
+              </SelectItem>
             </SelectContent>
           </Select>
-          <p v-if="form.errors.status" class="text-sm text-destructive">
-            {{ form.errors.status }}
-          </p>
-        </div>
+        </FormField>
 
         <div class="flex items-center gap-6">
           <div class="flex items-center gap-2">
@@ -280,7 +275,7 @@ function submit() {
           placeholder="Select or create tags..."
           search-placeholder="Search tags..."
           new-item-placeholder="New tag name..."
-          :error="form.errors.tags"
+          :error="firstErrorFor('tags')"
         />
       </CardContent>
     </Card>
@@ -297,7 +292,7 @@ function submit() {
           placeholder="Select or create categories..."
           search-placeholder="Search categories..."
           new-item-placeholder="New category name..."
-          :error="form.errors.categories"
+          :error="firstErrorFor('categories')"
         />
       </CardContent>
     </Card>
@@ -323,6 +318,7 @@ function submit() {
           :key="source._key"
           v-model:source="form.sources[index]"
           :index="index"
+          :source-types="sourceTypes"
           :errors="form.errors as Record<string, string>"
           @remove="removeSource(index)"
         />
@@ -333,7 +329,7 @@ function submit() {
     <div class="flex items-center justify-end gap-3">
       <Link
         :href="route('admin.quotes.index')"
-        class="text-sm text-gray-600 hover:text-gray-900"
+        class="text-sm text-muted-foreground hover:text-foreground"
       >
         Cancel
       </Link>

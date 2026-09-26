@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { Tag, ComboboxItem } from '@/types';
-import { ref, watch } from 'vue';
+import type { Tag, ComboboxItem, SavedContext } from '@/types';
+import { ref } from 'vue';
+import { isAxiosError } from 'axios';
 import { Button } from '@/Components/ui/button';
+import { FormField } from '@/Components/ui/form-field';
 import { Input } from '@/Components/ui/input';
 import { Textarea } from '@/Components/ui/textarea';
-import { Label } from '@/Components/ui/label';
 import { ComboboxMultiSelect } from '@/Components/ui/combobox-multi-select';
 import {
     Dialog,
@@ -20,60 +21,54 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    saved: [];
+    saved: [savedContext: SavedContext];
 }>();
 
-// State
 const open = ref(false);
 const saving = ref(false);
 const subject = ref('');
 const body = ref('');
 const selectedTags = ref<ComboboxItem[]>([]);
-const error = ref<string | null>(null);
+const errors = ref<Record<string, string>>({});
 
-function onOpen() {
+function onOpen(): void {
     open.value = true;
     subject.value = '';
     body.value = props.currentBody;
     selectedTags.value = [];
-    error.value = null;
+    errors.value = {};
 }
 
-async function save() {
-    if (!subject.value.trim()) {
-        error.value = 'Subject is required.';
-        return;
-    }
-    if (!body.value.trim()) {
-        error.value = 'Body is required.';
-        return;
-    }
-
+async function save(): Promise<void> {
     saving.value = true;
-    error.value = null;
+    errors.value = {};
 
     try {
-        await window.axios.post(route('admin.saved-contexts.store'), {
+        const { data } = await window.axios.post<SavedContext>(route('admin.saved-contexts.store'), {
             subject: subject.value,
             body: body.value,
             tags: selectedTags.value,
         });
 
         open.value = false;
-        emit('saved');
-    } catch (e: unknown) {
-        const err = e as { response?: { data?: { message?: string } } };
-        error.value = err.response?.data?.message ?? 'Failed to save context.';
+        emit('saved', data);
+    } catch (error: unknown) {
+        errors.value = validationErrors(error);
     } finally {
         saving.value = false;
     }
 }
 
-// Keep body in sync with currentBody when dialog opens
-watch(() => props.currentBody, (newVal) => {
-    if (!open.value) { return; }
-    body.value = newVal;
-});
+/** Laravel's 422 response lists messages per field; show the first for each. */
+function validationErrors(error: unknown): Record<string, string> {
+    if (isAxiosError(error) && error.response?.status === 422) {
+        const fieldErrors = error.response.data.errors as Record<string, string[]>;
+
+        return Object.fromEntries(Object.entries(fieldErrors).map(([field, messages]) => [field, messages[0]]));
+    }
+
+    return { general: 'Failed to save context. Please try again.' };
+}
 </script>
 
 <template>
@@ -81,33 +76,30 @@ watch(() => props.currentBody, (newVal) => {
         Save context
     </Button>
 
-    <Dialog :open="open" @update:open="val => { open = val }">
+    <Dialog v-model:open="open">
         <DialogContent class="max-w-xl">
             <DialogHeader>
                 <DialogTitle>Save Context to Library</DialogTitle>
             </DialogHeader>
 
-            <div class="space-y-4">
-                <div class="space-y-2">
-                    <Label for="save-context-subject">Subject *</Label>
+            <form id="save-context-form" class="space-y-4" @submit.prevent="save">
+                <FormField label="Subject *" for="save-context-subject" :error="errors.subject">
                     <Input
                         id="save-context-subject"
                         v-model="subject"
                         placeholder="e.g. Iran Nuclear Deal History..."
                     />
-                </div>
+                </FormField>
 
-                <div class="space-y-2">
-                    <Label for="save-context-body">Context Body *</Label>
+                <FormField label="Context Body *" for="save-context-body" :error="errors.body">
                     <Textarea
                         id="save-context-body"
                         v-model="body"
                         class="min-h-[120px]"
                     />
-                </div>
+                </FormField>
 
-                <div class="space-y-2">
-                    <Label>Tags</Label>
+                <FormField label="Tags" :error="errors.tags">
                     <ComboboxMultiSelect
                         v-model="selectedTags"
                         :options="tags"
@@ -115,14 +107,14 @@ watch(() => props.currentBody, (newVal) => {
                         search-placeholder="Search tags..."
                         new-item-placeholder="New tag name..."
                     />
-                </div>
+                </FormField>
 
-                <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
-            </div>
+                <p v-if="errors.general" class="text-sm text-destructive">{{ errors.general }}</p>
+            </form>
 
             <DialogFooter>
-                <Button variant="outline" :disabled="saving" @click="open = false">Cancel</Button>
-                <Button :disabled="saving" @click="save">
+                <Button type="button" variant="outline" :disabled="saving" @click="open = false">Cancel</Button>
+                <Button type="submit" form="save-context-form" :disabled="saving">
                     {{ saving ? 'Saving...' : 'Save to Library' }}
                 </Button>
             </DialogFooter>

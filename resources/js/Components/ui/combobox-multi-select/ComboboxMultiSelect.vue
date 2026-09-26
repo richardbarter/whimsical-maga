@@ -81,11 +81,17 @@ function remove(index: number): void {
                 v-for="(item, index) in modelValue"
                 :key="item.id ?? item.name"
                 variant="secondary"
-                class="cursor-pointer"
-                @click="remove(index)"
+                class="gap-1 pr-1"
             >
                 {{ item.name }}
-                <span class="ml-1">&times;</span>
+                <button
+                    type="button"
+                    class="rounded-sm px-0.5 opacity-70 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    :aria-label="`Remove ${item.name}`"
+                    @click="remove(index)"
+                >
+                    &times;
+                </button>
             </Badge>
         </div>
 

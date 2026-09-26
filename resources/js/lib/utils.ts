@@ -31,3 +31,8 @@ export function formatFileSize(bytes?: number): string {
   if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
   return Math.round(bytes / 1024) + ' KB';
 }
+
+/** Shorten text to `length` characters, adding an ellipsis when it was cut. */
+export function truncate(text: string, length: number): string {
+  return text.length > length ? text.slice(0, length) + '…' : text
+}

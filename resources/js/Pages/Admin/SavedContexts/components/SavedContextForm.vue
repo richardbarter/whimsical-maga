@@ -5,7 +5,7 @@ import { ComboboxMultiSelect } from '@/Components/ui/combobox-multi-select';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Textarea } from '@/Components/ui/textarea';
-import { Label } from '@/Components/ui/label';
+import { FormField } from '@/Components/ui/form-field';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 
 const props = defineProps<{
@@ -39,26 +39,22 @@ function submit() {
                 <CardTitle>Details</CardTitle>
             </CardHeader>
             <CardContent class="space-y-4">
-                <div class="space-y-2">
-                    <Label for="subject">Subject *</Label>
+                <FormField label="Subject *" for="subject" :error="form.errors.subject">
                     <Input
                         id="subject"
                         v-model="form.subject"
                         placeholder="e.g. Iran Nuclear Deal History, January 6th Overview..."
                     />
-                    <p v-if="form.errors.subject" class="text-sm text-destructive">{{ form.errors.subject }}</p>
-                </div>
+                </FormField>
 
-                <div class="space-y-2">
-                    <Label for="body">Context Body *</Label>
+                <FormField label="Context Body *" for="body" :error="form.errors.body">
                     <Textarea
                         id="body"
                         v-model="form.body"
                         placeholder="Write the reusable context text here..."
                         class="min-h-[160px]"
                     />
-                    <p v-if="form.errors.body" class="text-sm text-destructive">{{ form.errors.body }}</p>
-                </div>
+                </FormField>
             </CardContent>
         </Card>
 
@@ -83,7 +79,7 @@ function submit() {
         <div class="flex items-center justify-end gap-3">
             <Link
                 :href="route('admin.saved-contexts.index')"
-                class="text-sm text-gray-600 hover:text-gray-900"
+                class="text-sm text-muted-foreground hover:text-foreground"
             >
                 Cancel
             </Link>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { SavedContext } from '@/types';
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Badge } from '@/Components/ui/badge';
@@ -10,51 +9,24 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/Components/ui/dialog';
+import { useSavedContextSearch } from '@/composables/useSavedContextSearch';
 
 const emit = defineEmits<{
     select: [body: string];
 }>();
 
-// State
 const open = ref(false);
-const searchQuery = ref('');
-const results = ref<SavedContext[]>([]);
-const loading = ref(false);
+const { query, results, isLoading, error, reset } = useSavedContextSearch();
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-async function fetchResults() {
-    loading.value = true;
-    try {
-        const params = new URLSearchParams();
-        if (searchQuery.value) {
-            params.set('q', searchQuery.value);
-        }
-
-        const response = await fetch(route('admin.saved-contexts.search') + '?' + params.toString(), {
-            headers: { Accept: 'application/json' },
-        });
-        results.value = await response.json();
-    } finally {
-        loading.value = false;
-    }
-}
-
-function onOpen() {
+function onOpen(): void {
     open.value = true;
-    searchQuery.value = '';
-    fetchResults();
+    reset();
 }
 
-function selectContext(body: string) {
+function selectContext(body: string): void {
     emit('select', body);
     open.value = false;
 }
-
-watch(searchQuery, () => {
-    if (debounceTimer) { clearTimeout(debounceTimer); }
-    debounceTimer = setTimeout(fetchResults, 300);
-});
 </script>
 
 <template>
@@ -62,27 +34,30 @@ watch(searchQuery, () => {
         Load context
     </Button>
 
-    <Dialog :open="open" @update:open="val => { open = val }">
+    <Dialog v-model:open="open">
         <DialogContent class="max-w-2xl">
             <DialogHeader>
                 <DialogTitle>Load Saved Context</DialogTitle>
             </DialogHeader>
 
             <div class="space-y-4">
-                <!-- Search input -->
                 <div class="space-y-1">
                     <Input
-                        v-model="searchQuery"
+                        v-model="query"
                         placeholder="Search by subject or tag — separate multiple terms with commas..."
+                        aria-label="Search saved contexts"
                         class="w-full"
                     />
                     <p class="text-xs text-muted-foreground">e.g. "January 6th, Trump" matches contexts relevant to both terms</p>
                 </div>
 
-                <!-- Results list -->
-                <div class="max-h-80 overflow-y-auto rounded-md border">
-                    <div v-if="loading" class="p-4 text-center text-sm text-muted-foreground">
+                <div class="max-h-80 overflow-y-auto rounded-md border" aria-live="polite">
+                    <div v-if="isLoading" class="p-4 text-center text-sm text-muted-foreground">
                         Loading...
+                    </div>
+
+                    <div v-else-if="error" class="p-4 text-center text-sm text-destructive">
+                        {{ error }}
                     </div>
 
                     <div v-else-if="!results.length" class="p-4 text-center text-sm text-muted-foreground">
