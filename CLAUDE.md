@@ -31,7 +31,7 @@ This is a Laravel 12 + Inertia.js + Vue 3 + TypeScript application for managing 
 ### Backend Structure
 
 - **Models**: `Quote` is the central entity with relationships to `Source` (hasMany), `Tag` (belongsToMany), `Category` (belongsToMany), and `User` (belongsTo)
-- **Role-based access**: Users have a `role_id` linking to `Role` model. Use `$user->isAdmin()` or `$user->hasRole('name')` for checks
+- **Role-based access**: Users have a `role_id` linking to `Role` model. Use `$user->isAdmin()` or `$user->hasRole(RoleName::Admin)` for checks (role names are the `App\Enums\RoleName` enum)
 - **Admin middleware**: `EnsureUserIsAdmin` middleware protects admin routes at `/admin/*`
 - **Controller pattern**: Follow **Authorize, Validate, Act, Respond** in controller methods. Authorization is handled by route middleware + Form Request `authorize()`. Validation is handled by Form Requests. The controller method body should only contain Act (business logic) then Respond (redirect/response).
 - **Skinny controllers**: Controllers orchestrate only. Extract heavy business logic into models or service classes.

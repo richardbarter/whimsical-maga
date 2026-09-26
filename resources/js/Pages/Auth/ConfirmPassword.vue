@@ -1,56 +1,45 @@
 <script setup lang="ts">
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import { Button } from '@/Components/ui/button';
+import { FormField } from '@/Components/ui/form-field';
+import { Input } from '@/Components/ui/input';
 import { Head, useForm } from '@inertiajs/vue3';
 
 const form = useForm({
     password: '',
 });
 
-const submit = () => {
+function submit(): void {
     form.post(route('password.confirm'), {
         onFinish: () => {
             form.reset();
         },
     });
-};
+}
 </script>
 
 <template>
     <GuestLayout>
         <Head title="Confirm Password" />
 
-        <div class="mb-4 text-sm text-gray-600">
-            This is a secure area of the application. Please confirm your
-            password before continuing.
-        </div>
+        <p class="mb-4 text-sm text-muted-foreground">
+            This is a secure area of the application. Please confirm your password before continuing.
+        </p>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="password" value="Password" />
-                <TextInput
+        <form @submit.prevent="submit" class="space-y-5">
+            <FormField label="Password" for="password" :error="form.errors.password">
+                <Input
                     id="password"
                     type="password"
-                    class="mt-1 block w-full"
                     v-model="form.password"
                     required
                     autocomplete="current-password"
                     autofocus
                 />
-                <InputError class="mt-2" :message="form.errors.password" />
-            </div>
+            </FormField>
 
-            <div class="mt-4 flex justify-end">
-                <PrimaryButton
-                    class="ms-4"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Confirm
-                </PrimaryButton>
+            <div class="flex justify-end pt-1">
+                <Button type="submit" :disabled="form.processing">Confirm</Button>
             </div>
         </form>
     </GuestLayout>

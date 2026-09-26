@@ -7,7 +7,7 @@ import { Link } from "@inertiajs/vue3";
     class="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12"
   >
     <div class="mb-8 text-center">
-      <Link href="/" class="text-3xl font-bold text-primary">
+      <Link :href="route('home')" class="text-3xl font-bold text-primary">
         Whimsical MAGA
       </Link>
     </div>

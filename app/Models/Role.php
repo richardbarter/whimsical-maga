@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RoleName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,6 +15,13 @@ class Role extends Model
         'name',
         'description',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'name' => RoleName::class,
+        ];
+    }
 
     /**
      * Get the users that belong to this role.

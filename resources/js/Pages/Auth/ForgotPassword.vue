@@ -1,56 +1,49 @@
 <script setup lang="ts">
-import GuestLayout from "@/Layouts/GuestLayout.vue";
-import FormField from "@/Components/ui/form-field/FormField.vue";
-import Input from "@/Components/ui/input/Input.vue";
-import PrimaryButton from "@/Components/PrimaryButton.vue";
-import { Head, useForm } from "@inertiajs/vue3";
+import GuestLayout from '@/Layouts/GuestLayout.vue';
+import { Button } from '@/Components/ui/button';
+import { FormField } from '@/Components/ui/form-field';
+import { Input } from '@/Components/ui/input';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
 defineProps<{
-  status?: string;
+    status?: string;
 }>();
 
 const form = useForm({
-  email: "",
+    email: '',
 });
 
-const submit = () => {
-  form.post(route("password.email"));
-};
+function submit(): void {
+    form.post(route('password.email'));
+}
 </script>
 
 <template>
-  <GuestLayout>
-    <Head title="Forgot Password" />
+    <GuestLayout>
+        <Head title="Forgot Password" />
 
-    <div class="mb-4 text-sm text-gray-600">
-      Forgot your password? No problem. Just let us know your email address and
-      we will email you a password reset link that will allow you to choose a
-      new one.
-    </div>
+        <p class="mb-4 text-sm text-muted-foreground">
+            Forgot your password? Enter your email address and we'll send you a link to choose a new one.
+        </p>
 
-    <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
-      {{ status }}
-    </div>
+        <p v-if="status" class="mb-4 text-sm font-medium text-primary">
+            {{ status }}
+        </p>
 
-    <form @submit.prevent="submit">
-      <FormField label="Email" for="email" :error="form.errors.email">
-        <Input
-          id="email"
-          type="email"
-          v-model="form.email"
-          required
-          autocomplete="username"
-        />
-      </FormField>
+        <form @submit.prevent="submit" class="space-y-5">
+            <FormField label="Email" for="email" :error="form.errors.email">
+                <Input id="email" type="email" v-model="form.email" required autofocus autocomplete="username" />
+            </FormField>
 
-      <div class="mt-4 flex items-center justify-end">
-        <PrimaryButton
-          :class="{ 'opacity-25': form.processing }"
-          :disabled="form.processing"
-        >
-          Email Password Reset Link
-        </PrimaryButton>
-      </div>
-    </form>
-  </GuestLayout>
+            <div class="flex items-center justify-between pt-1">
+                <Link :href="route('login')" class="text-sm text-primary underline underline-offset-4 hover:text-primary/80">
+                    Back to sign in
+                </Link>
+
+                <Button type="submit" :disabled="form.processing">
+                    Email reset link
+                </Button>
+            </div>
+        </form>
+    </GuestLayout>
 </template>

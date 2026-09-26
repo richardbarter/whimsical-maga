@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Auth\Events\Lockout;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -11,6 +12,12 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
+    private const MAX_ATTEMPTS_PER_IP = 5;
+
+    private const MAX_ATTEMPTS_PER_EMAIL = 20;
+
+    private const EMAIL_DECAY_SECONDS = 15 * 60;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -22,7 +29,7 @@ class LoginRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -35,7 +42,7 @@ class LoginRequest extends FormRequest
     /**
      * Attempt to authenticate the request's credentials.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function authenticate(): void
     {
@@ -43,6 +50,7 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->emailThrottleKey(), self::EMAIL_DECAY_SECONDS);
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -50,22 +58,31 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+        RateLimiter::clear($this->emailThrottleKey());
     }
 
     /**
      * Ensure the login request is not rate limited.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * Two limits apply: 5 attempts per email+IP (a single guesser), and a per-email ceiling
+     * that also stops guessing spread across many IP addresses.
+     *
+     * @throws ValidationException
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        $limitedKey = collect([
+            $this->throttleKey() => self::MAX_ATTEMPTS_PER_IP,
+            $this->emailThrottleKey() => self::MAX_ATTEMPTS_PER_EMAIL,
+        ])->filter(fn (int $maxAttempts, string $key) => RateLimiter::tooManyAttempts($key, $maxAttempts))->keys()->first();
+
+        if ($limitedKey === null) {
             return;
         }
 
         event(new Lockout($this));
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+        $seconds = RateLimiter::availableIn($limitedKey);
 
         throw ValidationException::withMessages([
             'email' => trans('auth.throttle', [
@@ -81,5 +98,13 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    /**
+     * The rate limiting key shared by every IP address trying this email.
+     */
+    public function emailThrottleKey(): string
+    {
+        return 'login-email:'.Str::transliterate(Str::lower($this->string('email')));
     }
 }

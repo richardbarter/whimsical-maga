@@ -18,7 +18,8 @@ class ProfileTest extends TestCase
             ->actingAs($user)
             ->get('/profile');
 
-        $response->assertOk();
+        $response->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Profile/Edit'));
     }
 
     public function test_profile_information_can_be_updated(): void
@@ -41,6 +42,28 @@ class ProfileTest extends TestCase
         $this->assertSame('Test User', $user->name);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
+    }
+
+    public function test_profile_update_cannot_change_the_users_role(): void
+    {
+        $user = User::factory()->asUser()->create();
+        $adminRoleId = User::factory()->admin()->create()->role_id;
+
+        $this
+            ->actingAs($user)
+            ->patch('/profile', [
+                'name' => $user->name,
+                'email' => $user->email,
+                'role_id' => $adminRoleId,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertFalse($user->refresh()->isAdmin());
+    }
+
+    public function test_role_id_is_not_mass_assignable(): void
+    {
+        $this->assertNotContains('role_id', (new User)->getFillable());
     }
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
