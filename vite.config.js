@@ -5,9 +5,15 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
     server: {
-        host: '0.0.0.0',
         hmr: {
             host: 'localhost',
+        },
+        watch: {
+            // Docker Desktop doesn't forward file-change events from Windows bind mounts,
+            // so the vite container polls instead (set in docker-compose.yml).
+            usePolling: process.env.WATCH_USE_POLLING === 'true',
+            // Polling stats every watched file; skip the large PHP-side directories.
+            ignored: ['**/vendor/**', '**/storage/**'],
         },
     },
     plugins: [
