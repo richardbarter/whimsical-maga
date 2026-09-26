@@ -16,11 +16,21 @@ if [ "$APP_ENV" != "local" ]; then
     php artisan view:cache
 fi
 
+# A command was passed — e.g. Fly's release_command (`php artisan migrate --force`),
+# which Fly runs through this ENTRYPOINT in a temporary machine. Run it and exit
+# instead of starting the web server.
+if [ "$#" -gt 0 ]; then
+    exec "$@"
+fi
+
 # Create the public/storage symlink
 php artisan storage:link --force
 
-# Run database migrations
-php artisan migrate --force
+# Production runs migrations once per deploy via release_command in fly.toml;
+# local Docker keeps migrating on boot for convenience.
+if [ "$APP_ENV" = "local" ]; then
+    php artisan migrate --force
+fi
 
 # Start Supervisor (manages Nginx + PHP-FPM)
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

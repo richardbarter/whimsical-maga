@@ -73,10 +73,11 @@ RUN { \
     echo 'opcache.validate_timestamps=0'; \
 } > /usr/local/etc/php/conf.d/opcache.ini
 
-# Allow uploads up to 10MB
+# Allow 10MB uploads. post_max_size leaves headroom for the rest of the form, so an
+# oversized file fails validation instead of PHP silently dropping the whole request body.
 RUN { \
     echo 'upload_max_filesize = 10M'; \
-    echo 'post_max_size = 10M'; \
+    echo 'post_max_size = 12M'; \
 } > /usr/local/etc/php/conf.d/uploads.ini
 
 # Install Composer binary (needed for dump-autoload below)

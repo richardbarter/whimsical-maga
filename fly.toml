@@ -17,6 +17,13 @@ primary_region = 'ord'
   SESSION_DRIVER = 'database'
   QUEUE_CONNECTION = 'database'
   CACHE_STORE = 'database'
+  # Machines have ephemeral disks, so file logs vanish on stop and never reach `fly logs`
+  LOG_CHANNEL = 'stderr'
+
+[deploy]
+  # Runs once per deploy in a temporary machine (through docker/entrypoint.sh) before any
+  # new machines start; a failed migration stops the deploy.
+  release_command = 'php artisan migrate --force'
 
 [http_service]
   internal_port = 8080
