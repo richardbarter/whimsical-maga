@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\QuoteStatus;
 use App\Enums\QuoteType;
+use App\Enums\SourceType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\QuoteRequest;
 use App\Models\Category;
@@ -10,18 +12,13 @@ use App\Models\Quote;
 use App\Models\Speaker;
 use App\Models\Tag;
 use App\Services\QuoteService;
-use App\Services\SpeakerService;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class QuoteController extends Controller
 {
-    public function __construct(
-        private SpeakerService $speakerService,
-        private QuoteService $quoteService,
-    ) {}
+    public function __construct(private QuoteService $quoteService) {}
 
     public function index(): Response
     {
@@ -36,12 +33,7 @@ class QuoteController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Admin/Quotes/Create', [
-            'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
-            'categories' => Category::orderBy('name')->get(['id', 'name', 'slug', 'color']),
-            'speakers' => Speaker::with('aliases')->orderBy('name')->get(['id', 'name', 'slug']),
-            'quoteTypes' => QuoteType::options(),
-        ]);
+        return Inertia::render('Admin/Quotes/Create', $this->formOptions());
     }
 
     /**
@@ -51,28 +43,7 @@ class QuoteController extends Controller
     public function store(QuoteRequest $request): RedirectResponse
     {
         // Act
-        $speakerId = $this->speakerService->resolveFromName($request->input('speaker'));
-        $slug = Quote::generateSlug($request->input('text'));
-
-        try {
-            $quote = Quote::create([
-                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note', 'claim', 'reality_check']),
-                'speaker_id' => $speakerId,
-                'slug' => $slug,
-                'user_id' => $request->user()->id,
-            ]);
-        } catch (UniqueConstraintViolationException) {
-            // Race condition: two requests generated the same slug at the same moment.
-            // The DB unique constraint caught it. Append a timestamp and retry once.
-            $quote = Quote::create([
-                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note', 'claim', 'reality_check']),
-                'speaker_id' => $speakerId,
-                'slug' => $slug.'-'.time(),
-                'user_id' => $request->user()->id,
-            ]);
-        }
-
-        $this->quoteService->syncRelations($quote, $request->input('tags'), $request->input('categories'), $request->input('sources'));
+        $this->quoteService->create($request->validated(), $request->user());
 
         // Respond
         return redirect()->route('admin.quotes.index')
@@ -85,10 +56,7 @@ class QuoteController extends Controller
 
         return Inertia::render('Admin/Quotes/Edit', [
             'quote' => $quote,
-            'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
-            'categories' => Category::orderBy('name')->get(['id', 'name', 'slug', 'color']),
-            'speakers' => Speaker::with('aliases')->orderBy('name')->get(['id', 'name', 'slug']),
-            'quoteTypes' => QuoteType::options(),
+            ...$this->formOptions(),
         ]);
     }
 
@@ -99,29 +67,7 @@ class QuoteController extends Controller
     public function update(QuoteRequest $request, Quote $quote): RedirectResponse
     {
         // Act
-        $speakerId = $this->speakerService->resolveFromName($request->input('speaker'));
-
-        $slug = $quote->slug;
-        if ($request->input('text') !== $quote->text) {
-            $slug = Quote::generateSlug($request->input('text'), $quote->id);
-        }
-
-        try {
-            $quote->update([
-                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note', 'claim', 'reality_check']),
-                'speaker_id' => $speakerId,
-                'slug' => $slug,
-            ]);
-        } catch (UniqueConstraintViolationException) {
-            // Race condition: two requests tried to update to the same slug simultaneously.
-            $quote->update([
-                ...$request->safe()->only(['text', 'context', 'location', 'occurred_at', 'is_verified', 'is_featured', 'status', 'quote_type', 'quote_type_note', 'claim', 'reality_check']),
-                'speaker_id' => $speakerId,
-                'slug' => $slug.'-'.time(),
-            ]);
-        }
-
-        $this->quoteService->syncRelations($quote, $request->input('tags'), $request->input('categories'), $request->input('sources'));
+        $this->quoteService->update($quote, $request->validated());
 
         // Respond
         return redirect()->route('admin.quotes.index')
@@ -148,5 +94,22 @@ class QuoteController extends Controller
         $quote->update(['is_featured' => ! $quote->is_featured]);
 
         return back();
+    }
+
+    /**
+     * Lookup data shared by the create and edit forms.
+     *
+     * @return array<string, mixed>
+     */
+    private function formOptions(): array
+    {
+        return [
+            'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
+            'categories' => Category::orderBy('name')->get(['id', 'name', 'slug', 'color']),
+            'speakers' => Speaker::with('aliases')->orderBy('name')->get(['id', 'name', 'slug']),
+            'quoteTypes' => QuoteType::options(),
+            'quoteStatuses' => QuoteStatus::options(),
+            'sourceTypes' => SourceType::options(),
+        ];
     }
 }

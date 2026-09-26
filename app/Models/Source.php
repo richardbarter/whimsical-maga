@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SourceType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,7 @@ class Source extends Model
     {
         return [
             'is_primary' => 'boolean',
+            'source_type' => SourceType::class,
         ];
     }
 

@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SavedContextRequest;
+use App\Http\Requests\Admin\SavedContextSearchRequest;
 use App\Models\SavedContext;
 use App\Models\Tag;
 use App\Services\SavedContextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -37,13 +37,16 @@ class SavedContextController extends Controller
      * Authorize: Route middleware (EnsureUserIsAdmin) + SavedContextRequest::authorize()
      * Validate: SavedContextRequest
      */
-    public function store(SavedContextRequest $request): RedirectResponse
+    public function store(SavedContextRequest $request): RedirectResponse|JsonResponse
     {
         // Act
-        $savedContext = SavedContext::create($request->safe()->only(['subject', 'body']));
-        $this->savedContextService->syncTags($savedContext, $request->input('tags'));
+        $savedContext = $this->savedContextService->create($request->validated());
 
-        // Respond
+        // Respond — JSON for the quote form's "Save context" dialog, a redirect for the admin page
+        if ($request->wantsJson()) {
+            return response()->json($savedContext->load('tags'), 201);
+        }
+
         return redirect()->route('admin.saved-contexts.index')
             ->with('success', 'Saved context created successfully.');
     }
@@ -65,8 +68,7 @@ class SavedContextController extends Controller
     public function update(SavedContextRequest $request, SavedContext $savedContext): RedirectResponse
     {
         // Act
-        $savedContext->update($request->safe()->only(['subject', 'body']));
-        $this->savedContextService->syncTags($savedContext, $request->input('tags'));
+        $this->savedContextService->update($savedContext, $request->validated());
 
         // Respond
         return redirect()->route('admin.saved-contexts.index')
@@ -81,21 +83,10 @@ class SavedContextController extends Controller
             ->with('success', 'Saved context deleted successfully.');
     }
 
-    public function search(Request $request): JsonResponse
+    public function search(SavedContextSearchRequest $request): JsonResponse
     {
-        $terms = $request->q
-            ? array_filter(array_map('trim', explode(',', $request->q)))
-            : [];
-
         $savedContexts = SavedContext::with('tags')
-            ->when($terms, function ($query) use ($terms) {
-                foreach ($terms as $term) {
-                    $query->where(function ($q) use ($term) {
-                        $q->whereRaw('LOWER(subject) LIKE ?', ['%'.strtolower($term).'%'])
-                            ->orWhereHas('tags', fn ($t) => $t->whereRaw('LOWER(name) LIKE ?', ['%'.strtolower($term).'%']));
-                    });
-                }
-            })
+            ->matchingAllTerms($request->terms())
             ->orderBy('subject')
             ->limit(20)
             ->get(['id', 'subject', 'body']);

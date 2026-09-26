@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Speaker;
 use App\Models\SpeakerAlias;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class SpeakerService
 {
@@ -41,19 +41,16 @@ class SpeakerService
 
     private function createSpeaker(string $name): Speaker
     {
-        $baseSlug = Str::slug($name);
-        $slug = $baseSlug;
-        $counter = 1;
-
-        while (Speaker::where('slug', $slug)->exists()) {
-            $slug = $baseSlug.'-'.$counter++;
-        }
-
         try {
-            return Speaker::create(['name' => $name, 'slug' => $slug]);
+            // Nested transaction = savepoint when called inside QuoteService's transaction,
+            // so a unique violation can be caught without aborting the outer Postgres transaction.
+            return DB::transaction(fn () => Speaker::create([
+                'name' => $name,
+                'slug' => Speaker::generateUniqueSlug($name),
+            ]));
         } catch (UniqueConstraintViolationException) {
             // Race condition: another concurrent request created this speaker between
-            // our exists() check and our create(). The DB unique constraint caught it.
+            // our slug check and our create(). The DB unique constraint caught it.
             // Find and return the speaker that was just inserted.
             return Speaker::where('name', $name)->firstOrFail();
         }

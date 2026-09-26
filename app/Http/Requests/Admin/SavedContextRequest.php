@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SavedContextRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class SavedContextRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -26,7 +28,7 @@ class SavedContextRequest extends FormRequest
             'body' => ['required', 'string', 'max:2000'],
 
             'tags' => ['nullable', 'array'],
-            'tags.*.id' => ['nullable', 'integer'],
+            'tags.*.id' => ['nullable', 'integer', Rule::exists('tags', 'id')],
             'tags.*.name' => ['required', 'string', 'max:255'],
         ];
     }
