@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class BackgroundRequest extends FormRequest
@@ -12,7 +13,7 @@ class BackgroundRequest extends FormRequest
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -22,7 +23,7 @@ class BackgroundRequest extends FormRequest
             'alt_text' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'credit' => ['nullable', 'string', 'max:255'],
-            'source_url' => ['nullable', 'url', 'max:2048'],
+            'source_url' => ['nullable', 'url:http,https', 'max:2048'],
         ];
     }
 }
