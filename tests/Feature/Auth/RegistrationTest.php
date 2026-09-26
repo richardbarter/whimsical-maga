@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -39,6 +40,21 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('home', absolute: false));
+    }
+
+    public function test_registered_password_is_stored_hashed(): void
+    {
+        $this->post('/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $storedPassword = User::where('email', 'test@example.com')->value('password');
+
+        $this->assertNotSame('password', $storedPassword);
+        $this->assertTrue(Hash::check('password', $storedPassword));
     }
 
     public function test_registration_ignores_a_submitted_role_id(): void

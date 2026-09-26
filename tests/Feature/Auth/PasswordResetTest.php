@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -59,13 +60,18 @@ class PasswordResetTest extends TestCase
             $response = $this->post('/reset-password', [
                 'token' => $notification->token,
                 'email' => $user->email,
-                'password' => 'password',
-                'password_confirmation' => 'password',
+                'password' => 'a-brand-new-password',
+                'password_confirmation' => 'a-brand-new-password',
             ]);
 
             $response
                 ->assertSessionHasNoErrors()
                 ->assertRedirect(route('login'));
+
+            // Stored hashed by the User model's "hashed" cast, not as plain text.
+            $storedPassword = $user->refresh()->password;
+            $this->assertNotSame('a-brand-new-password', $storedPassword);
+            $this->assertTrue(Hash::check('a-brand-new-password', $storedPassword));
 
             return true;
         });
