@@ -123,6 +123,21 @@ export interface QuoteFormData {
     sources: SourceForm[];
 }
 
+export interface SavedContext {
+    id: number;
+    subject: string;
+    body: string;
+    tags?: Tag[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SavedContextFormData {
+    subject: string;
+    body: string;
+    tags: ComboboxItem[];
+}
+
 export interface PaginatedData<T> {
     data: T[];
     current_page: number;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ChevronsRight, Pause, Play } from "lucide-vue-next";
+import { Link } from "@inertiajs/vue3";
 import { NAV_ITEMS } from "@/config/navigation";
 import { useNavMenuAnimation } from "@/composables/useNavMenuAnimation";
 
@@ -45,9 +46,11 @@ const { menuOpen, menuVisible, boxPhases, toggle } = useNavMenuAnimation(
 
     <!-- Menu boxes — crawl out below the trigger -->
     <div v-if="menuVisible" class="mt-2 flex flex-col gap-0.5">
-      <button
+      <component
+        :is="item.href ? Link : 'button'"
         v-for="(item, index) in NAV_ITEMS"
         :key="index"
+        :href="item.href"
         class="nav-box relative"
         :class="{
           'nav-box--entering': boxPhases[index] === 'entering',
@@ -81,7 +84,7 @@ const { menuOpen, menuVisible, boxPhases, toggle } = useNavMenuAnimation(
         >
           <component :is="item.icon" class="box-icon size-5 text-white" />
         </div>
-      </button>
+      </component>
     </div>
   </div>
 </template>

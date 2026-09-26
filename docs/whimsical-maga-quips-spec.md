@@ -1,12 +1,14 @@
-# Whimsical Trump Quips - Project Specification
+# Whimsical Trump Quotes - Project Specification
 
 ## 1. Project Overview
-- **Project Name:** Whimsical Trump Quips
+
+- **Project Name:** Whimsical Trump Quotes
 - **Purpose:** A site that shows different outrageous quotes, comments, actions or general things that either Trump, his administration, or republicans have done. Eventual purpose to be an archive that people can reference to show just how bad the Trump administration is.
 - **Target Audience:** Political oriented people. A reference site, but also a humorous site that can be shared with people.
 - **Core Concept:** The main idea - rotating quotes with uplifting, whimsical backgrounds, humorous/serious content mix. A whimsical style is core to the app's identity.
 
 ## 2. Tech Stack
+
 - **Frontend:** Vue 3 + TypeScript
 - **Styling:** Tailwind CSS
 - **Component Library:** Shadcn-vue
@@ -19,6 +21,7 @@
 ## 3. Phase 1 - MVP (Minimum Viable Product)
 
 ### 3.1 Core Features
+
 - Quote display with cycling/rotation
 - Background image cycling
 - **Admin authentication (login/logout)**
@@ -28,6 +31,7 @@
 - Tag and category assignment (admin only, backend preparation)
 
 ### 3.2 Data Requirements
+
 - Quotes table
 - Backgrounds table
 - Tags table
@@ -41,11 +45,13 @@
 ### 3.3 User Experience
 
 #### Public Users
+
 - View rotating quotes (tags/categories not visible to users yet)
 - See backgrounds cycle
 - No user accounts for public
 
 #### Admin Users
+
 - **Login via dedicated admin login page**
 - **Access admin dashboard**
 - Create, edit, delete quotes
@@ -54,6 +60,7 @@
 - Create and manage tags/categories
 
 ### 3.4 Technical Notes
+
 - Database schema includes tags/categories from the start
 - Admin panel allows tagging, but frontend doesn't display or filter by them yet
 - Sets foundation for Phase 2 without requiring data migration
@@ -64,6 +71,7 @@
 ## 4. Phase 2 - Enhanced Discovery
 
 ### 4.1 Features
+
 - **Display tags and categories on quote cards**
 - Search functionality
 - **Filtering by tags**
@@ -71,6 +79,7 @@
 - Browse/explore pages for tags and categories
 
 ### 4.2 Data Requirements
+
 - (Already exists from Phase 1)
 - Tags table ✓
 - Categories table ✓
@@ -79,6 +88,7 @@
 - **Possibly add: tag descriptions, category descriptions**
 
 ### 4.3 User Experience
+
 - Browse quotes by tag
 - Filter by category
 - Search quotes by keyword
@@ -89,18 +99,21 @@
 ## 5. Phase 3 - User Interaction
 
 ### 5.1 Features
+
 - User accounts and authentication
 - User-submitted quotes
 - Comments/evidence on quotes
 - User interaction tracking
 
 ### 5.2 Data Requirements
+
 - Users table (expanded from Phase 1 admin-only)
 - User-submitted quotes (with approval workflow?)
 - Comments/evidence tables
 - User activity tracking
 
 ### 5.3 User Experience
+
 - Create account / login
 - Submit own quotes
 - Add evidence/context to quotes
@@ -109,6 +122,7 @@
 ## 6. Phase 4+ - Future Enhancements (Optional)
 
 ### 6.1 Potential Features
+
 - Voting/rating system
 - Social sharing
 - Quote of the day
@@ -117,11 +131,13 @@
 - Mobile app considerations
 
 ### 6.2 Ideas for Later
+
 - [Any other ideas you want to capture but not commit to]
 
 ## 7. Data Model Considerations
 
 ### 7.1 Core Entities
+
 - Quotes
 - Backgrounds/Images
 - Tags
@@ -130,6 +146,7 @@
 - Roles
 
 ### 7.2 Key Relationships
+
 - Roles → Users (one-to-many)
 - Users → Quotes (one-to-many: creates)
 - Quotes → Sources (one-to-many: has many)
@@ -138,6 +155,7 @@
 - Quotes ↔ Categories (many-to-many via pivot table)
 
 ### 7.3 Important Fields to Consider
+
 - Timestamps (created_at, updated_at)
 - Soft deletes (deleted_at)
 - Status fields (published, draft, pending)
@@ -146,6 +164,7 @@
 ## 8. Technical Considerations
 
 ### 8.1 Performance
+
 - Image optimization strategy
 - Caching approach
 - Database indexing priorities
@@ -153,6 +172,7 @@
 ### 8.2 Security
 
 #### Authentication Approach
+
 - **Laravel Breeze** for simple authentication (recommended for Phase 1)
 - **Role-based access control** via roles table:
   - Phase 1: Admin role only
@@ -160,6 +180,7 @@
 - Session-based authentication (Inertia works great with this)
 
 #### Authorization
+
 - Policies/gates for role-based actions
 - All admin routes behind `auth` and `role:admin` middleware
 - No public user registration in Phase 1 (admin creates accounts manually if needed)
@@ -167,6 +188,7 @@
 - XSS protection
 
 #### Roles Structure (Phase 1)
+
 ```
 Roles:
 - Admin: Full access to all admin features
@@ -177,6 +199,7 @@ Future roles (Phase 3+):
 ```
 
 #### Routes Structure
+
 ```
 Public routes:
 - / (homepage with rotating quotes)
@@ -193,6 +216,7 @@ Admin routes (protected):
 ### 8.3 Asset Management
 
 #### Phase 1: Local Storage
+
 - Store background images in Laravel's `storage/app/public/backgrounds/`
 - Use Laravel's storage facade for uploads
 - Symlink storage to public directory
@@ -201,23 +225,27 @@ Admin routes (protected):
 - Accept formats: JPG, PNG, WebP
 
 #### Image Sources
+
 - **Free stock photos:** Unsplash, Pexels, Pixabay
 - **License:** Ensure commercial use allowed
 - **Optimization:** Compress images before upload (TinyPNG, ImageOptim)
 - **Recommended size:** 1920x1080 or similar for full-screen backgrounds
 
 #### Phase 2+: Cloud Storage Migration (Optional)
+
 - Migrate to Cloudflare R2 or AWS S3 for better performance
 - Implement CDN for faster image delivery
 - Keep database structure same (just update URLs)
 
 #### Database Storage
+
 - `backgrounds` table stores `file_path` (Phase 1) or `url` (Phase 2+)
 - Store original filename, size, dimensions for reference
 
 ## 9. Admin Panel Requirements
 
 ### Phase 1 Admin Features
+
 - **Login/logout functionality**
 - **Dashboard overview (basic stats if desired)**
 - Manage quotes (CRUD)
@@ -236,12 +264,14 @@ Admin routes (protected):
   - Create, edit, delete categories
 
 ### Admin UI Considerations
+
 - Use Shadcn-vue components for consistent admin interface
 - Forms with proper validation
 - Success/error notifications
 - Confirm dialogs for destructive actions (delete)
 
 ### Phase 3+ Admin Features
+
 - Approve user-submitted content
 - View analytics/stats
 - User management
@@ -249,23 +279,27 @@ Admin routes (protected):
 ## 10. Development Milestones
 
 ### Milestone 1: MVP Launch
+
 - Working quote rotation
 - Admin can manage content (quotes, backgrounds, tags, categories)
 - Admin authentication working
 - Deployed and accessible
 
 ### Milestone 2: Enhanced Discovery
+
 - Full tagging/categorization visible on frontend
 - Search working
 - Filtering functional
 - Improved UX
 
 ### Milestone 3: Community Features
+
 - User accounts live
 - User submissions working
 - Moderation tools functional
 
 ## 11. Open Questions / Decisions Needed
+
 - How long should quote rotation intervals be? (30 seconds? User configurable?)
 - Should there be multiple quote display modes? (random, chronological, featured)
 - Should categories be single-select or multi-select per quote? (Currently: multi-select)
@@ -275,6 +309,7 @@ Admin routes (protected):
 ## 12. Database Seeders & Initial Data
 
 ### Roles Seeder
+
 ```php
 // database/seeders/RoleSeeder.php
 Role::create([
@@ -283,7 +318,7 @@ Role::create([
 ]);
 
 Role::create([
-    'name' => 'moderator', 
+    'name' => 'moderator',
     'description' => 'Can approve quotes, manage tags/categories'
 ]);
 
@@ -294,6 +329,7 @@ Role::create([
 ```
 
 ### Admin User Seeder (Phase 1)
+
 ```php
 // database/seeders/AdminUserSeeder.php
 $adminRole = Role::where('name', 'admin')->first();
@@ -308,6 +344,7 @@ User::create([
 ```
 
 ### Helper Methods for User Model
+
 ```php
 // app/Models/User.php
 public function isAdmin(): bool
@@ -329,6 +366,7 @@ public function isModerator(): bool
 ## 13. Database Indexes (For Performance)
 
 ### Recommended Indexes
+
 ```php
 // Quotes table
 INDEX on status
@@ -356,6 +394,7 @@ INDEX on quote_id
 ## 14. Design & Styling Notes
 
 ### Whimsical Style Direction
+
 The whimsical aesthetic is core to the app's identity and should influence:
 
 - **Typography:** Playful but readable fonts (consider: Quicksand, Poppins, Nunito for headings)
@@ -367,12 +406,14 @@ The whimsical aesthetic is core to the app's identity and should influence:
 - **Contrast:** The juxtaposition of serious political content against whimsical, uplifting backgrounds
 
 ### Component Styling with Tailwind + Shadcn-vue
+
 - Use Shadcn-vue components as base
 - Customize with Tailwind to achieve whimsical aesthetic
 - Consistent animation timing (ease-in-out transitions)
 - Hover states should feel responsive and playful
 
 ### Background Image Strategy
+
 - Uplifting imagery: nature scenes, colorful abstracts, positive vibes
 - Creates ironic contrast with potentially serious quote content
 - Makes heavy political content more digestible and shareable

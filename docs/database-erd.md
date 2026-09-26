@@ -1,4 +1,4 @@
-# Database ERD - Whimsical Trump Quips
+# Database ERD - Whimsical Trump Quotes
 
 This file contains the Mermaid syntax for the database Entity Relationship Diagram.
 You can paste this into https://mermaid.live/ to view or export as PNG/SVG.
@@ -109,6 +109,7 @@ erDiagram
 ## Tables Summary
 
 ### Core Tables
+
 - **roles**: User role definitions (admin, moderator, user)
 - **users**: All users (admin and regular users in Phase 3+)
 - **quotes**: The main content - Trump quotes/actions
@@ -118,10 +119,12 @@ erDiagram
 - **categories**: Many-to-many categorization system
 
 ### Pivot Tables
+
 - **quote_tag**: Links quotes to tags
 - **quote_category**: Links quotes to categories
 
 ## Key Relationships
+
 - One role has many users
 - One user creates many quotes
 - One quote has many sources
@@ -130,6 +133,7 @@ erDiagram
 - Quotes have many categories (via quote_category pivot)
 
 ## Notes
+
 - Using BIGINT auto-incrementing IDs (Laravel default)
 - Soft deletes on quotes table (deleted_at)
 - Status enum for quotes: published, draft, pending

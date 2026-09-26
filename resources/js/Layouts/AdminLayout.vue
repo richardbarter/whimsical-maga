@@ -24,6 +24,7 @@ const navLinks: NavLink[] = [
     { label: 'Dashboard', routeName: 'admin.dashboard', pattern: 'admin.dashboard' },
     { label: 'Quotes', routeName: 'admin.quotes.index', pattern: 'admin.quotes.*' },
     { label: 'Backgrounds', routeName: 'admin.backgrounds.index', pattern: 'admin.backgrounds.*' },
+    { label: 'Saved Contexts', routeName: 'admin.saved-contexts.index', pattern: 'admin.saved-contexts.*' },
     { label: 'Tags', routeName: 'admin.tags.index', pattern: 'admin.tags.*' },
     { label: 'Categories', routeName: 'admin.categories.index', pattern: 'admin.categories.*' },
 ];
