@@ -91,4 +91,14 @@ class HomeTest extends TestCase
                 ->has('quotes.0.speaker.name')
             );
     }
+
+    public function test_occurred_at_is_sent_as_a_plain_calendar_date(): void
+    {
+        Quote::factory()->published()->create(['occurred_at' => '2024-01-15']);
+
+        $this->get(route('home'))
+            ->assertInertia(fn ($page) => $page
+                ->where('quotes.0.occurred_at', '2024-01-15')
+            );
+    }
 }

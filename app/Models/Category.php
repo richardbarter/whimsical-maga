@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUniqueSlug;
+use App\Models\Concerns\ResolvesByName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Support\Str;
 
 class Category extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUniqueSlug, ResolvesByName;
 
     protected $fillable = [
         'name',
@@ -18,16 +19,11 @@ class Category extends Model
         'color',
     ];
 
-    /**
-     * Boot the model.
-     */
-    protected static function boot()
+    protected static function booted(): void
     {
-        parent::boot();
-
-        static::creating(function ($category) {
+        static::creating(function (Category $category): void {
             if (empty($category->slug)) {
-                $category->slug = Str::slug($category->name);
+                $category->slug = static::generateUniqueSlug($category->name);
             }
         });
     }

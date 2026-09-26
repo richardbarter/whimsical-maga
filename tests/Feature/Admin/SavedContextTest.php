@@ -362,4 +362,64 @@ class SavedContextTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(0);
     }
+
+    public function test_store_returns_the_created_context_as_json_for_the_quote_form_dialog(): void
+    {
+        $response = $this->actingAs($this->admin)->postJson(route('admin.saved-contexts.store'), $this->validPayload([
+            'tags' => [['id' => null, 'name' => 'Brand New Tag']],
+        ]));
+
+        $response->assertCreated()
+            ->assertJsonPath('subject', 'Iran Nuclear Deal History')
+            ->assertJsonPath('tags.0.name', 'Brand New Tag');
+    }
+
+    public function test_store_json_validation_errors_are_returned_as_json(): void
+    {
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.saved-contexts.store'), ['subject' => '', 'body' => ''])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['subject', 'body']);
+    }
+
+    public function test_search_rejects_a_non_string_query_instead_of_erroring(): void
+    {
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.saved-contexts.search', ['q' => ['not', 'a', 'string']]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('q');
+    }
+
+    public function test_search_ignores_blank_terms_between_commas(): void
+    {
+        SavedContext::factory()->create(['subject' => 'Iran Nuclear Deal']);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.saved-contexts.search', ['q' => ' , Iran ,, ']))
+            ->assertOk()
+            ->assertJsonCount(1);
+    }
+
+    public function test_store_validation_fails_with_a_nonexistent_tag_id(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.saved-contexts.store'), $this->validPayload([
+                'tags' => [['id' => 99999, 'name' => 'Deleted tag']],
+            ]))
+            ->assertSessionHasErrors('tags.0.id');
+
+        $this->assertDatabaseCount('saved_contexts', 0);
+    }
+
+    public function test_store_reuses_an_existing_tag_when_a_new_name_differs_only_by_case(): void
+    {
+        $existing = Tag::factory()->create(['name' => 'January 6th']);
+
+        $this->actingAs($this->admin)->post(route('admin.saved-contexts.store'), $this->validPayload([
+            'tags' => [['id' => null, 'name' => 'january 6th']],
+        ]));
+
+        $this->assertSame(1, Tag::count());
+        $this->assertEquals([$existing->id], SavedContext::first()->tags->pluck('id')->all());
+    }
 }

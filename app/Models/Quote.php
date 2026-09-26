@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\QuoteStatus;
 use App\Enums\QuoteType;
+use App\Models\Concerns\HasUniqueSlug;
 use App\Observers\QuoteObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,12 +14,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 
 #[ObservedBy(QuoteObserver::class)]
 class Quote extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasUniqueSlug, SoftDeletes;
 
     protected $fillable = [
         'text',
@@ -40,12 +41,13 @@ class Quote extends Model
     protected function casts(): array
     {
         return [
-            'occurred_at' => 'date',
+            'occurred_at' => 'date:Y-m-d',
             'published_at' => 'datetime',
             'is_verified' => 'boolean',
             'is_featured' => 'boolean',
             'view_count' => 'integer',
             'quote_type' => QuoteType::class,
+            'status' => QuoteStatus::class,
         ];
     }
 
@@ -76,25 +78,14 @@ class Quote extends Model
     /**
      * Generate a unique slug from the first 8 words of the quote text.
      *
-     * If the base slug is already taken, appends an incrementing counter (-2, -3, …).
-     * Pass $excludeId when regenerating a slug for an existing quote so it does not
-     * collide with itself.
+     * Word-based truncation avoids mid-word cut-offs. Pass $excludeId when
+     * regenerating the slug of an existing quote so it does not collide with itself.
      */
     public static function generateSlug(string $text, ?int $excludeId = null): string
     {
-        $baseSlug = Str::slug(implode(' ', array_slice(explode(' ', $text), 0, 8)));
-        $slug = $baseSlug;
-        $counter = 1;
+        $firstEightWords = implode(' ', array_slice(explode(' ', $text), 0, 8));
 
-        while (
-            static::where('slug', $slug)
-                ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
-                ->exists()
-        ) {
-            $slug = $baseSlug.'-'.$counter++;
-        }
-
-        return $slug;
+        return static::generateUniqueSlug($firstEightWords, $excludeId);
     }
 
     /**
@@ -121,7 +112,7 @@ class Quote extends Model
      */
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', 'published');
+        return $query->where('status', QuoteStatus::Published);
     }
 
     /**
