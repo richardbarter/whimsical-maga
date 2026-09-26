@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BackgroundController;
 use App\Http\Controllers\Admin\QuoteController;
+use App\Http\Controllers\Admin\SavedContextController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\EnsureUserIsAdmin;
@@ -57,6 +58,10 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('ad
     Route::get('/backgrounds/{background}/edit', [BackgroundController::class, 'edit'])->name('backgrounds.edit');
     Route::put('/backgrounds/{background}', [BackgroundController::class, 'update'])->name('backgrounds.update');
     Route::delete('/backgrounds/{background}', [BackgroundController::class, 'destroy'])->name('backgrounds.destroy');
+
+    // Saved Contexts (search must come before resource to avoid wildcard collision)
+    Route::get('/saved-contexts/search', [SavedContextController::class, 'search'])->name('saved-contexts.search');
+    Route::resource('saved-contexts', SavedContextController::class)->except(['show']);
 
     // Tags (placeholder routes)
     Route::get('/tags', function () {

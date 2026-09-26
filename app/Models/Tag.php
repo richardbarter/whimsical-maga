@@ -38,4 +38,12 @@ class Tag extends Model
     {
         return $this->belongsToMany(Quote::class)->withTimestamps();
     }
+
+    /**
+     * Get the saved contexts that have this tag.
+     */
+    public function savedContexts(): BelongsToMany
+    {
+        return $this->belongsToMany(SavedContext::class, 'saved_context_tag');
+    }
 }

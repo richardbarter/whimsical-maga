@@ -28,7 +28,7 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Admin Login" />
+        <Head title="Sign In" />
 
         <p v-if="status" class="mb-4 text-sm font-medium text-primary">
             {{ status }}
@@ -74,6 +74,13 @@ const submit = () => {
                     {{ form.processing ? 'Signing in…' : 'Sign in' }}
                 </Button>
             </div>
+
+            <p class="mt-4 text-center text-sm text-muted-foreground">
+                Don't have an account?
+                <Link :href="route('register')" class="text-primary underline underline-offset-4 hover:text-primary/80">
+                    Sign up
+                </Link>
+            </p>
         </form>
     </GuestLayout>
 </template>
