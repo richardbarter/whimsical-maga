@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Tag, Category, Speaker, Quote, QuoteFormData, QuoteTypeOption } from '@/types';
+import type { Tag, Category, Speaker, Quote, QuoteFormData, QuoteTypeOption, QuoteStatusOption, SourceTypeOption } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { formatDate } from '@/lib/utils';
@@ -11,6 +11,8 @@ const props = defineProps<{
     categories: Category[];
     speakers: Speaker[];
     quoteTypes: QuoteTypeOption[];
+    quoteStatuses: QuoteStatusOption[];
+    sourceTypes: SourceTypeOption[];
 }>();
 
 const initialValues: QuoteFormData = {
@@ -46,12 +48,12 @@ const initialValues: QuoteFormData = {
     <AdminLayout>
         <template #header>
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                <h2 class="text-xl font-semibold leading-tight text-foreground">
                     Edit Quote
                 </h2>
                 <Link
                     :href="route('admin.quotes.index')"
-                    class="text-sm text-gray-600 hover:text-gray-900"
+                    class="text-sm text-muted-foreground hover:text-foreground"
                 >
                     &larr; Back to Quotes
                 </Link>
@@ -65,6 +67,8 @@ const initialValues: QuoteFormData = {
                     :categories="categories"
                     :speakers="speakers"
                     :quote-types="quoteTypes"
+                    :quote-statuses="quoteStatuses"
+                    :source-types="sourceTypes"
                     :initial-values="initialValues"
                     submit-label="Update Quote"
                     submit-method="put"
