@@ -4,8 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Background;
 use App\Models\Quote;
+use App\Models\Subject;
 use App\Services\QuoteFeedService;
+use Closure;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\Fluent\AssertableJson;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class HomeTest extends TestCase
@@ -177,6 +181,71 @@ class HomeTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->has('quotes.0.speaker', fn ($speaker) => $speaker->has('id')->has('name'))
             );
+    }
+
+    public function test_each_quote_sends_only_the_card_fields(): void
+    {
+        Quote::factory()->published()->create([
+            'claim' => 'A claim',
+            'reality_check' => 'A reality check',
+        ]);
+
+        // A closure on has() fails if any key is left unchecked, so this is the exact field list
+        $this->get(route('home'))
+            ->assertInertia(fn ($page) => $page
+                ->has('quotes.0', fn (AssertableJson $quote) => $quote
+                    ->hasAll(['id', 'text', 'context', 'occurred_at', 'is_featured', 'speaker_id', 'slug', 'has_full_details', 'speaker'])
+                )
+            );
+    }
+
+    public function test_quotes_include_their_slug_for_the_quote_page_link(): void
+    {
+        $quote = Quote::factory()->published()->create();
+
+        $this->get(route('home'))
+            ->assertInertia(fn ($page) => $page->where('quotes.0.slug', $quote->slug));
+    }
+
+    public function test_has_full_details_is_true_with_a_published_subject_that_has_details(): void
+    {
+        $quote = Quote::factory()->published()->create();
+        $quote->subjects()->attach([
+            Subject::factory()->create()->id => ['position' => 0],
+            Subject::factory()->published()->create()->id => ['position' => 1],
+        ]);
+
+        $this->get(route('home'))
+            ->assertInertia(fn ($page) => $page->where('quotes.0.has_full_details', true));
+    }
+
+    /**
+     * @return array<string, array{Closure(Quote): void}>
+     */
+    public static function quotesWithoutFullDetails(): array
+    {
+        return [
+            'no subjects' => [fn (Quote $quote) => null],
+            'only a draft subject' => [fn (Quote $quote) => $quote->subjects()->attach(Subject::factory()->create())],
+            'a published subject with no details' => [
+                fn (Quote $quote) => $quote->subjects()->attach(Subject::factory()->published()->withoutDetails()->create()),
+            ],
+            'a deleted published subject' => [function (Quote $quote) {
+                $subject = Subject::factory()->published()->create();
+                $quote->subjects()->attach($subject);
+                $subject->delete();
+            }],
+        ];
+    }
+
+    #[DataProvider('quotesWithoutFullDetails')]
+    public function test_has_full_details_is_false_without_readable_full_details(Closure $linkSubjects): void
+    {
+        $quote = Quote::factory()->published()->create();
+        $linkSubjects($quote);
+
+        $this->get(route('home'))
+            ->assertInertia(fn ($page) => $page->where('quotes.0.has_full_details', false));
     }
 
     public function test_occurred_at_is_sent_as_a_plain_calendar_date(): void

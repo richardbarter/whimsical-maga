@@ -6,6 +6,18 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
+        {{-- Sharing tags, set per page with withViewData('meta', …). There's no SSR, so bots only see these. --}}
+        @isset($meta)
+            <meta name="description" content="{{ $meta['description'] }}">
+            <link rel="canonical" href="{{ $meta['url'] }}">
+            <meta property="og:site_name" content="{{ config('app.name') }}">
+            <meta property="og:type" content="article">
+            <meta property="og:title" content="{{ $meta['title'] }}">
+            <meta property="og:description" content="{{ $meta['description'] }}">
+            <meta property="og:url" content="{{ $meta['url'] }}">
+            <meta name="twitter:card" content="summary">
+        @endisset
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=nunito:400,500,600,700&display=swap" rel="stylesheet" />

@@ -10,6 +10,7 @@ use App\Http\Requests\Admin\QuoteRequest;
 use App\Models\Category;
 use App\Models\Quote;
 use App\Models\Speaker;
+use App\Models\Subject;
 use App\Models\Tag;
 use App\Services\QuoteService;
 use Illuminate\Http\RedirectResponse;
@@ -52,7 +53,7 @@ class QuoteController extends Controller
 
     public function edit(Quote $quote): Response
     {
-        $quote->load(['speaker.aliases', 'tags', 'categories', 'sources']);
+        $quote->load(['speaker.aliases', 'tags', 'categories', 'subjects:id,name', 'sources']);
 
         return Inertia::render('Admin/Quotes/Edit', [
             'quote' => $quote,
@@ -106,6 +107,7 @@ class QuoteController extends Controller
         return [
             'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
             'categories' => Category::orderBy('name')->get(['id', 'name', 'slug', 'color']),
+            'subjects' => Subject::orderBy('name')->get(['id', 'name', 'slug', 'status']),
             'speakers' => Speaker::with('aliases')->orderBy('name')->get(['id', 'name', 'slug']),
             'quoteTypes' => QuoteType::options(),
             'quoteStatuses' => QuoteStatus::options(),

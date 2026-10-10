@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Tag, Category, Speaker, QuoteTypeOption, QuoteStatusOption, SourceTypeOption } from '@/types';
+import type { Tag, Category, Subject, Speaker, QuoteTypeOption, QuoteStatusOption, SourceTypeOption } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import QuoteForm from './components/QuoteForm.vue';
@@ -7,6 +7,7 @@ import QuoteForm from './components/QuoteForm.vue';
 defineProps<{
     tags: Tag[];
     categories: Category[];
+    subjects: Subject[];
     speakers: Speaker[];
     quoteTypes: QuoteTypeOption[];
     quoteStatuses: QuoteStatusOption[];
@@ -37,6 +38,7 @@ defineProps<{
                 <QuoteForm
                     :tags="tags"
                     :categories="categories"
+                    :subjects="subjects"
                     :speakers="speakers"
                     :quote-types="quoteTypes"
                     :quote-statuses="quoteStatuses"

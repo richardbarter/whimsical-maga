@@ -44,6 +44,10 @@ class QuoteRequest extends FormRequest
             'categories.*.id' => ['nullable', 'integer', Rule::exists('categories', 'id')],
             'categories.*.name' => ['required', 'string', 'max:255'],
 
+            'subjects' => ['nullable', 'array'],
+            'subjects.*.id' => ['nullable', 'integer', Rule::exists('subjects', 'id')->whereNull('deleted_at')],
+            'subjects.*.name' => ['required', 'string', 'max:255'],
+
             'sources' => ['nullable', 'array'],
             'sources.*.url' => ['required', 'url:http,https', 'max:2048'],
             'sources.*.title' => ['nullable', 'string', 'max:255'],
@@ -69,6 +73,8 @@ class QuoteRequest extends FormRequest
             'tags.*.name' => 'tag name',
             'categories.*.id' => 'category',
             'categories.*.name' => 'category name',
+            'subjects.*.id' => 'subject',
+            'subjects.*.name' => 'subject name',
             'sources.*.url' => 'source URL',
             'sources.*.title' => 'source title',
             'sources.*.source_type' => 'source type',
@@ -86,6 +92,7 @@ class QuoteRequest extends FormRequest
             'occurred_at.before_or_equal' => 'The date occurred cannot be in the future.',
             'tags.*.id.exists' => 'One of the selected tags no longer exists. Please reload the page.',
             'categories.*.id.exists' => 'One of the selected categories no longer exists. Please reload the page.',
+            'subjects.*.id.exists' => 'One of the selected subjects no longer exists. Please reload the page.',
         ];
     }
 }

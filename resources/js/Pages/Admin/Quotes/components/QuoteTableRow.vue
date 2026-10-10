@@ -3,7 +3,7 @@ import type { Quote } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
 import { formatDate, truncate } from '@/lib/utils';
 import { Button } from '@/Components/ui/button';
-import { Badge } from '@/Components/ui/badge';
+import { StatusBadge } from '@/Components/ui/status-badge';
 import { TableRow, TableCell } from '@/Components/ui/table';
 import {
     Tooltip,
@@ -16,12 +16,6 @@ const props = defineProps<{ quote: Quote }>();
 const emit = defineEmits<{ confirmDelete: [quote: Quote] }>();
 
 const TRUNCATE_LENGTH = 100;
-
-function statusVariant(status: Quote['status']): 'default' | 'secondary' | 'outline' {
-    if (status === 'published') return 'default';
-    if (status === 'pending') return 'secondary';
-    return 'outline';
-}
 
 function toggleVerified() {
     router.patch(route('admin.quotes.verify', props.quote.id), {}, { preserveScroll: true });
@@ -50,16 +44,7 @@ function toggleFeature() {
             {{ quote.speaker?.name ?? '—' }}
         </TableCell>
         <TableCell>
-            <Badge
-                :variant="statusVariant(quote.status)"
-                :class="{
-                    'bg-green-100 text-green-800 hover:bg-green-100': quote.status === 'published',
-                    'bg-yellow-100 text-yellow-800 hover:bg-yellow-100': quote.status === 'pending',
-                    'bg-gray-100 text-gray-600 hover:bg-gray-100': quote.status === 'draft',
-                }"
-            >
-                {{ quote.status }}
-            </Badge>
+            <StatusBadge :status="quote.status" />
         </TableCell>
         <TableCell class="text-center">
             <Check v-if="quote.is_verified" class="mx-auto h-4 w-4 text-green-600" />

@@ -18,6 +18,7 @@ const EDITABLE_INDEXES = [
     { index: '/admin/quotes', editLink: 'Edit quote' },
     { index: '/admin/backgrounds', editLink: 'Edit background' },
     { index: '/admin/saved-contexts', editLink: 'Edit' },
+    { index: '/admin/subjects', editLink: 'Edit' },
 ]
 
 const ADMIN_PATHS = [
@@ -28,6 +29,8 @@ const ADMIN_PATHS = [
     '/admin/backgrounds/create',
     '/admin/saved-contexts',
     '/admin/saved-contexts/create',
+    '/admin/subjects',
+    '/admin/subjects/create',
     '/admin/tags',
     '/admin/categories',
     '/profile',
@@ -87,6 +90,19 @@ test.describe('Admin pages render without client errors', () => {
             await expectPageRendersCleanly(page, new URL(href!, page.url()).pathname, errors)
         })
     }
+
+    test('public quote page (via "View page" on the quote edit form)', async ({ page }) => {
+        await loginAsAdmin(page)
+        await page.goto('/admin/quotes')
+
+        const editLink = page.getByRole('link', { name: 'Edit quote', exact: true }).first()
+        test.skip((await editLink.count()) === 0, 'No quotes to view')
+
+        await editLink.click()
+        const href = await page.getByRole('link', { name: 'View page' }).getAttribute('href')
+        const errors = collectClientErrors(page)
+        await expectPageRendersCleanly(page, new URL(href!, page.url()).pathname, errors)
+    })
 
     test('/profile uses the admin layout for admins', async ({ page }) => {
         await loginAsAdmin(page)

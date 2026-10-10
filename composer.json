@@ -13,6 +13,7 @@
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.0",
         "spatie/laravel-csp": "^3.23",
+        "symfony/html-sanitizer": "^8.1",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {

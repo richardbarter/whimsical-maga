@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Quote;
+use App\Models\Subject;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Support\Arr;
@@ -77,7 +78,8 @@ class QuoteService
     }
 
     /**
-     * Tags and categories are {id, name} pairs; new ones (id=null) are created by name.
+     * Tags, categories and subjects are {id, name} pairs; new ones (id=null) are created by
+     * name (a new subject starts as a draft). Subjects keep the submitted order as their position.
      *
      * Sources have no natural key to sync on, so they are replaced wholesale — the
      * request always carries the full desired set. Must run inside the caller's
@@ -89,6 +91,11 @@ class QuoteService
     {
         $quote->tags()->sync(Tag::resolveIds($data['tags'] ?? null));
         $quote->categories()->sync(Category::resolveIds($data['categories'] ?? null));
+        $quote->subjects()->sync(
+            collect(Subject::resolveIds($data['subjects'] ?? null))
+                ->mapWithKeys(fn (int $id, int $position) => [$id => ['position' => $position]])
+                ->all()
+        );
 
         $quote->sources()->delete();
         $quote->sources()->createMany($data['sources'] ?? []);

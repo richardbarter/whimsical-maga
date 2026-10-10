@@ -7,12 +7,19 @@ import { Switch } from '@/Components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select'
 import { Trash2 } from 'lucide-vue-next'
 
-const props = defineProps<{
+/**
+ * One editable source (URL, title, type, archived copy). Used for quote sources and for the
+ * evidence behind a subject; subjects have no "primary" source, so they hide that switch.
+ */
+const props = withDefaults(defineProps<{
     source: SourceForm
     index: number
     sourceTypes: SourceTypeOption[]
     errors: Record<string, string>
-}>()
+    showPrimary?: boolean
+}>(), {
+    showPrimary: true,
+})
 
 const emit = defineEmits<{
     'update:source': [value: SourceForm]
@@ -96,7 +103,7 @@ function update(field: keyof SourceForm, value: string | number | boolean) {
                 </p>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div v-if="showPrimary" class="flex items-center gap-2">
                 <Switch
                     :id="`source-primary-${index}`"
                     :model-value="source.is_primary"
