@@ -3,6 +3,7 @@ import type {
   Tag,
   Category,
   Speaker,
+  Subject,
   QuoteFormData,
   QuoteStatusOption,
   QuoteTypeOption,
@@ -11,6 +12,7 @@ import type {
 import { Link, router, useForm } from "@inertiajs/vue3";
 import { DatePicker } from "@/Components/ui/date-picker";
 import { ComboboxMultiSelect } from "@/Components/ui/combobox-multi-select";
+import { SourceFormRow } from "@/Components/ui/source-form-row";
 import { Button } from "@/Components/ui/button";
 import { FormField } from "@/Components/ui/form-field";
 import { Input } from "@/Components/ui/input";
@@ -26,7 +28,6 @@ import {
 } from "@/Components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Plus } from "lucide-vue-next";
-import SourceFormRow from "./SourceFormRow.vue";
 import SpeakerAutocomplete from "./SpeakerAutocomplete.vue";
 import SavedContextPicker from "./SavedContextPicker.vue";
 import SaveContextDialog from "./SaveContextDialog.vue";
@@ -34,6 +35,7 @@ import SaveContextDialog from "./SaveContextDialog.vue";
 const props = defineProps<{
   tags: Tag[];
   categories: Category[];
+  subjects: Subject[];
   speakers: Speaker[];
   quoteTypes: QuoteTypeOption[];
   quoteStatuses: QuoteStatusOption[];
@@ -59,6 +61,7 @@ const form = useForm<QuoteFormData>({
   status: props.initialValues?.status ?? "draft",
   tags: props.initialValues?.tags ?? [],
   categories: props.initialValues?.categories ?? [],
+  subjects: props.initialValues?.subjects ?? [],
   sources: props.initialValues?.sources ?? [],
 });
 
@@ -78,7 +81,7 @@ function removeSource(index: number) {
 }
 
 /** The first error for a field or any of its nested items (e.g. "tags.0.id"). */
-function firstErrorFor(field: "tags" | "categories"): string | undefined {
+function firstErrorFor(field: "tags" | "categories" | "subjects"): string | undefined {
   const errors = form.errors as Record<string, string>;
   const key = Object.keys(errors).find((name) => name === field || name.startsWith(`${field}.`));
 
@@ -91,11 +94,7 @@ function refreshTagOptions() {
 }
 
 function submit() {
-  if (props.submitMethod === "post") {
-    form.post(props.submitRoute);
-  } else {
-    form.put(props.submitRoute);
-  }
+  form.submit(props.submitMethod, props.submitRoute);
 }
 </script>
 
@@ -223,6 +222,28 @@ function submit() {
             class="min-h-[120px]"
           />
         </FormField>
+      </CardContent>
+    </Card>
+
+    <!-- Subjects -->
+    <Card>
+      <CardHeader>
+        <CardTitle>Subjects</CardTitle>
+      </CardHeader>
+      <CardContent class="space-y-3">
+        <p class="text-sm text-muted-foreground">
+          The arguments this quote makes. Each subject's full details appear on
+          the quote's page, in this order. New subjects are created as drafts;
+          write their full details on the Subjects page.
+        </p>
+        <ComboboxMultiSelect
+          v-model="form.subjects"
+          :options="subjects"
+          placeholder="Select or create subjects..."
+          search-placeholder="Search subjects..."
+          new-item-placeholder="New subject title..."
+          :error="firstErrorFor('subjects')"
+        />
       </CardContent>
     </Card>
 

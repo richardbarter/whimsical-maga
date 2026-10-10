@@ -4,11 +4,13 @@ namespace Tests\Feature\Admin;
 
 use App\Enums\QuoteStatus;
 use App\Enums\SourceType;
+use App\Enums\SubjectStatus;
 use App\Models\Category;
 use App\Models\Quote;
 use App\Models\Source;
 use App\Models\Speaker;
 use App\Models\SpeakerAlias;
+use App\Models\Subject;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -379,6 +381,7 @@ class QuoteTest extends TestCase
         $quote = Quote::factory()->create();
         $quote->tags()->attach($tag);
         $quote->categories()->attach($category);
+        $quote->subjects()->attach(Subject::factory()->create());
 
         $response = $this->actingAs($this->admin)->get(route('admin.quotes.edit', $quote));
 
@@ -390,9 +393,11 @@ class QuoteTest extends TestCase
             ->has('quote.speaker')
             ->has('quote.tags', 1)
             ->has('quote.categories', 1)
+            ->has('quote.subjects', 1)
             ->has('quote.sources')
             ->has('tags')
             ->has('categories')
+            ->has('subjects', 1)
             ->has('speakers')
             ->has('quoteTypes', 6)
         );
@@ -676,6 +681,157 @@ class QuoteTest extends TestCase
             ->assertSessionHasErrors('categories.0.id');
 
         $this->assertDatabaseCount('quotes', 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // Subjects
+    // -------------------------------------------------------------------------
+
+    public function test_create_and_edit_forms_include_subject_options_in_name_order(): void
+    {
+        Subject::factory()->create(['name' => 'Zebra claim']);
+        Subject::factory()->published()->create(['name' => 'Apple claim']);
+        Subject::factory()->create(['name' => 'Trashed claim'])->delete();
+        $quote = Quote::factory()->create();
+
+        foreach ([route('admin.quotes.create'), route('admin.quotes.edit', $quote)] as $url) {
+            $this->actingAs($this->admin)->get($url)
+                ->assertInertia(fn ($page) => $page
+                    ->has('subjects', 2)
+                    ->where('subjects.0.name', 'Apple claim')
+                    ->where('subjects.0.status', 'published')
+                    ->where('subjects.1.name', 'Zebra claim')
+                    ->missing('subjects.0.full_details')
+                );
+        }
+    }
+
+    public function test_edit_form_lists_the_quotes_subjects_in_position_order(): void
+    {
+        $quote = Quote::factory()->create();
+        $first = Subject::factory()->create(['name' => 'Second alphabetically']);
+        $second = Subject::factory()->create(['name' => 'First alphabetically']);
+        $quote->subjects()->attach([$second->id => ['position' => 1], $first->id => ['position' => 0]]);
+
+        $this->actingAs($this->admin)->get(route('admin.quotes.edit', $quote))
+            ->assertInertia(fn ($page) => $page
+                ->has('quote.subjects', 2)
+                ->where('quote.subjects.0.id', $first->id)
+                ->where('quote.subjects.1.id', $second->id)
+            );
+    }
+
+    public function test_store_syncs_subjects_with_positions_in_the_submitted_order(): void
+    {
+        $first = Subject::factory()->create();
+        $second = Subject::factory()->create();
+        $third = Subject::factory()->create();
+
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'subjects' => [
+                ['id' => $third->id, 'name' => $third->name],
+                ['id' => $first->id, 'name' => $first->name],
+                ['id' => $second->id, 'name' => $second->name],
+            ],
+        ]))->assertRedirect(route('admin.quotes.index'));
+
+        $quote = Quote::first();
+        $this->assertEquals([$third->id, $first->id, $second->id], $quote->subjects->pluck('id')->all());
+        $this->assertEquals([0, 1, 2], $quote->subjects->pluck('pivot.position')->all());
+    }
+
+    public function test_update_reorders_adds_and_removes_subjects(): void
+    {
+        $quote = Quote::factory()->create();
+        $kept = Subject::factory()->create();
+        $removed = Subject::factory()->create();
+        $added = Subject::factory()->create();
+        $quote->subjects()->attach([$kept->id => ['position' => 0], $removed->id => ['position' => 1]]);
+
+        $this->actingAs($this->admin)->put(route('admin.quotes.update', $quote), $this->validPayload([
+            'subjects' => [
+                ['id' => $added->id, 'name' => $added->name],
+                ['id' => $kept->id, 'name' => $kept->name],
+            ],
+        ]))->assertRedirect(route('admin.quotes.index'));
+
+        $subjects = $quote->fresh()->subjects;
+        $this->assertEquals([$added->id, $kept->id], $subjects->pluck('id')->all());
+        $this->assertEquals([0, 1], $subjects->pluck('pivot.position')->all());
+        $this->assertNotSoftDeleted($removed);
+    }
+
+    public function test_update_without_subjects_detaches_them(): void
+    {
+        $quote = Quote::factory()->create();
+        $quote->subjects()->attach(Subject::factory()->create());
+
+        $this->actingAs($this->admin)->put(route('admin.quotes.update', $quote), $this->validPayload());
+
+        $this->assertCount(0, $quote->fresh()->subjects);
+    }
+
+    public function test_store_creates_a_new_subject_by_name_as_a_draft(): void
+    {
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'subjects' => [['id' => null, 'name' => 'Windmills cause cancer']],
+        ]));
+
+        $subject = Subject::firstWhere('name', 'Windmills cause cancer');
+        $this->assertNotNull($subject);
+        $this->assertSame(SubjectStatus::Draft, $subject->status);
+        $this->assertSame('windmills-cause-cancer', $subject->slug);
+        $this->assertNull($subject->full_details);
+        $this->assertEquals([$subject->id], Quote::first()->subjects->pluck('id')->all());
+    }
+
+    public function test_store_reuses_an_existing_subject_when_a_new_name_differs_only_by_case(): void
+    {
+        $existing = Subject::factory()->published()->create(['name' => 'Windmills cause cancer']);
+
+        $this->actingAs($this->admin)->post(route('admin.quotes.store'), $this->validPayload([
+            'subjects' => [['id' => null, 'name' => 'windmills CAUSE cancer']],
+        ]));
+
+        $this->assertSame(1, Subject::count());
+        $this->assertSame(SubjectStatus::Published, $existing->fresh()->status);
+        $this->assertEquals([$existing->id], Quote::first()->subjects->pluck('id')->all());
+    }
+
+    public function test_store_validation_fails_with_a_nonexistent_subject_id(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.quotes.store'), $this->validPayload([
+                'subjects' => [['id' => 99999, 'name' => 'Deleted subject']],
+            ]))
+            ->assertSessionHasErrors(['subjects.0.id' => 'One of the selected subjects no longer exists. Please reload the page.']);
+
+        $this->assertDatabaseCount('quotes', 0);
+    }
+
+    public function test_store_validation_fails_with_a_trashed_subject_id(): void
+    {
+        $subject = Subject::factory()->create();
+        $subject->delete();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.quotes.store'), $this->validPayload([
+                'subjects' => [['id' => $subject->id, 'name' => $subject->name]],
+            ]))
+            ->assertSessionHasErrors('subjects.0.id');
+
+        $this->assertDatabaseCount('quotes', 0);
+    }
+
+    public function test_store_validation_requires_a_subject_name(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.quotes.store'), $this->validPayload([
+                'subjects' => [['id' => null, 'name' => '']],
+            ]))
+            ->assertSessionHasErrors('subjects.0.name');
+
+        $this->assertDatabaseCount('subjects', 0);
     }
 
     // -------------------------------------------------------------------------

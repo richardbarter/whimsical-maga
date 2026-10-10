@@ -14,6 +14,10 @@ export type QuoteStatusOption = SelectOption<QuoteStatus>;
 
 export type SourceTypeOption = SelectOption;
 
+export type SubjectStatus = 'draft' | 'published';
+
+export type SubjectStatusOption = SelectOption<SubjectStatus>;
+
 export interface SpeakerAlias {
     id: number;
     speaker_id: number;
@@ -61,6 +65,38 @@ export interface Source {
     archived_url?: string;
 }
 
+/** A study, report, ruling or article that a subject's full details rely on. */
+export interface SubjectSource {
+    id: number;
+    subject_id: number;
+    url: string;
+    title: string | null;
+    source_type: string | null;
+    archived_url: string | null;
+    position: number;
+}
+
+/** A reusable explanation shared by the quotes that make the same argument. */
+export interface Subject {
+    id: number;
+    name: string;
+    slug: string;
+    full_details?: string | null;
+    status: SubjectStatus;
+    quotes_count?: number;
+    sources?: SubjectSource[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SubjectFormData {
+    name: string;
+    status: SubjectStatus;
+    /** HTML from the rich text editor; '' when empty. */
+    full_details: string;
+    sources: SourceForm[];
+}
+
 export interface Quote {
     id: number;
     text: string;
@@ -84,8 +120,35 @@ export interface Quote {
     sources?: Source[];
     tags?: Tag[];
     categories?: Category[];
+    subjects?: Subject[];
+    /** Home feed only: a published subject with written full details is linked. */
+    has_full_details?: boolean;
     created_at: string;
     updated_at: string;
+}
+
+/** A subject as the public quote page receives it (QuotePageService::subjects()). */
+export interface QuotePageSubject {
+    id: number;
+    name: string;
+    slug: string;
+    status: SubjectStatus;
+    /** Sanitized on the server; null when no full details have been written. */
+    full_details_html: string | null;
+    sources: Pick<SubjectSource, 'url' | 'title' | 'source_type' | 'archived_url'>[];
+}
+
+/** Props for the public quote page (Pages/Public/Quotes/Show.vue). */
+export interface QuotePageProps {
+    quote: Quote;
+    /** Published subjects, plus drafts for admins, in the admin's order. */
+    subjects: QuotePageSubject[];
+    /** True for an unpublished quote, which only admins can reach. */
+    isPreview: boolean;
+    quoteTypes: QuoteTypeOption[];
+    sourceTypes: SourceTypeOption[];
+    /** Labels for subject sources (study, court ruling…), which differ from quote source types. */
+    subjectSourceTypes: SourceTypeOption[];
 }
 
 /** Cursor for the home page's batched quote feed. */
@@ -124,12 +187,13 @@ export interface ComboboxItem {
     name: string;
 }
 
+/** One row of SourceFormRow. Subject sources have no primary flag, so is_primary is optional. */
 export interface SourceForm {
     _key: string;
     url: string;
     title: string;
     source_type: string;
-    is_primary: boolean;
+    is_primary?: boolean;
     archived_url: string;
 }
 
@@ -148,6 +212,7 @@ export interface QuoteFormData {
     status: QuoteStatus;
     tags: ComboboxItem[];
     categories: ComboboxItem[];
+    subjects: ComboboxItem[];
     sources: SourceForm[];
 }
 

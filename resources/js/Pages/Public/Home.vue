@@ -6,10 +6,10 @@ import { useQuoteFeed } from "@/composables/useQuoteFeed";
 import { useQuoteRotation } from "@/composables/useQuoteRotation";
 import type { Background, Quote, QuoteFeed } from "@/types";
 import { formatDate } from "@/lib/utils";
-import { Head } from "@inertiajs/vue3";
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { Head, Link } from "@inertiajs/vue3";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { useEventListener, useSwipe } from "@vueuse/core";
-import { ref, toRef } from "vue";
+import { computed, ref, toRef } from "vue";
 
 const props = defineProps<{
   quotes: Quote[];
@@ -22,6 +22,12 @@ const { layers, activeLayer, currentBackground, transitionToNext } =
 
 const { loadMore: loadMoreQuotes } = useQuoteFeed(() => props.quoteFeed);
 
+// The rotation holds while the card is hovered or has keyboard focus, so a quote can be read
+// and its "Full details" link reached before it changes
+const isCardHovered = ref(false);
+const isCardFocused = ref(false);
+const isCardHeld = computed(() => isCardHovered.value || isCardFocused.value);
+
 const {
   currentQuote,
   currentQuoteIndex,
@@ -33,6 +39,7 @@ const {
 } = useQuoteRotation(toRef(props, "quotes"), {
   onBackgroundAdvance: transitionToNext,
   onRunningLow: loadMoreQuotes,
+  isHeld: isCardHeld,
 });
 
 const container = ref<HTMLElement | null>(null);
@@ -90,6 +97,18 @@ useSwipe(container, {
     if (direction === "right") goToPrev();
   },
 });
+
+/** Mouse only: a tap on a touch screen also fires pointerenter, and would hold the rotation until the next tap elsewhere. */
+function onCardPointerEnter(event: PointerEvent): void {
+  if (event.pointerType === "mouse") {
+    isCardHovered.value = true;
+  }
+}
+
+/** Focus moving between elements inside the card keeps it held. */
+function onCardFocusOut(event: FocusEvent): void {
+  isCardFocused.value = cardRef.value?.contains(event.relatedTarget as Node | null) ?? false;
+}
 
 function backgroundStyle(url: string): Record<string, string> | undefined {
   return url ? { backgroundImage: `url(${JSON.stringify(url)})` } : undefined;
@@ -170,6 +189,10 @@ useEventListener(window, "keydown", onKeyDown);
         <div
           ref="cardRef"
           class="rounded-2xl bg-white/90 p-8 shadow-2xl backdrop-blur-sm sm:p-12"
+          @pointerenter="onCardPointerEnter"
+          @pointerleave="isCardHovered = false"
+          @focusin="isCardFocused = true"
+          @focusout="onCardFocusOut"
         >
           <Transition
             name="quote-fade"
@@ -201,6 +224,15 @@ useEventListener(window, "keydown", onKeyDown);
                 </p>
                 <p v-if="currentQuote.context" class="text-sm text-gray-600">
                   {{ currentQuote.context }}
+                </p>
+                <p v-if="currentQuote.has_full_details" class="pt-2">
+                  <Link
+                    :href="route('quotes.show', { quote: currentQuote.id, slug: currentQuote.slug })"
+                    class="inline-flex items-center gap-1 text-sm font-semibold text-gray-800 underline decoration-primary decoration-2 underline-offset-4 transition-colors hover:text-primary"
+                  >
+                    Full details
+                    <ArrowRight class="size-4" aria-hidden="true" />
+                  </Link>
                 </p>
               </footer>
             </blockquote>

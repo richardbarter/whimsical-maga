@@ -12,6 +12,10 @@ erDiagram
     quotes ||--o{ quote_category : "has many"
     tags ||--o{ quote_tag : "has many"
     categories ||--o{ quote_category : "has many"
+    quotes ||--o{ quote_subject : "has many"
+    subjects ||--o{ quote_subject : "has many"
+    subjects ||--o{ subject_images : "has many"
+    subjects ||--o{ subject_sources : "has many"
 
     roles {
         bigint id PK
@@ -91,6 +95,49 @@ erDiagram
         timestamp updated_at
     }
 
+    subjects {
+        bigint id PK
+        string name "indexed, shown as Title; the argument being explained"
+        string slug UK
+        text full_details "nullable, long formatted explanation (HTML)"
+        string status "draft, published (indexed)"
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at "soft deletes"
+    }
+
+    subject_images {
+        bigint id PK
+        bigint subject_id FK
+        string file_path "subject-images/..., on the default disk (R2 in production)"
+        string alt_text "required, for screen readers"
+        string caption "nullable"
+        string credit "nullable"
+        integer file_size "in bytes, after metadata is stripped"
+        string dimensions "e.g. 1200x800"
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at "soft deletes; force delete removes the file"
+    }
+
+    subject_sources {
+        bigint id PK
+        bigint subject_id FK
+        string url "2048 chars; the evidence"
+        string title "nullable"
+        string source_type "study, government_report, court_ruling, official_data, news_article, fact_check, book, video, other"
+        string archived_url "nullable, 2048 chars"
+        smallint position "admin's order, default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    quote_subject {
+        bigint quote_id FK
+        bigint subject_id FK
+        smallint position "admin's order on the quote page, default 0"
+    }
+
     quote_tag {
         bigint id PK
         bigint quote_id FK
@@ -117,11 +164,15 @@ erDiagram
 - **backgrounds**: Whimsical background images (separate pool)
 - **tags**: Many-to-many tagging system
 - **categories**: Many-to-many categorization system
+- **subjects**: Reusable explanations (full details) shared by quotes that make the same argument
+- **subject_images**: Images uploaded from the full details editor; the subject's HTML refers to them by URL
+- **subject_sources**: The evidence behind a subject's full details (studies, reports, rulings), in order
 
 ### Pivot Tables
 
 - **quote_tag**: Links quotes to tags
 - **quote_category**: Links quotes to categories
+- **quote_subject**: Links quotes to subjects, with a `position` for ordering (unique on quote_id + subject_id, no timestamps)
 
 ## Key Relationships
 
@@ -131,10 +182,11 @@ erDiagram
 - Quotes and backgrounds are separate pools (no direct relationship - randomly paired)
 - Quotes have many tags (via quote_tag pivot)
 - Quotes have many categories (via quote_category pivot)
+- Quotes have many subjects, in order (via quote_subject pivot); a subject can be shared by many quotes
 
 ## Notes
 
 - Using BIGINT auto-incrementing IDs (Laravel default)
-- Soft deletes on quotes table (deleted_at)
+- Soft deletes on quotes and subjects tables (deleted_at)
 - Status enum for quotes: published, draft, pending
 - user_id is nullable in Phase 1 (admin-created quotes don't need user attribution initially)

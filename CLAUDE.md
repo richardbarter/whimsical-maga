@@ -40,7 +40,7 @@ This is a Laravel 12 + Inertia.js + Vue 3 + TypeScript application for managing 
 
 ### Frontend Structure
 
-- **Layouts**: `AdminLayout.vue` for admin pages, `PublicLayout.vue` for public pages, `AuthenticatedLayout.vue` for user pages, `GuestLayout.vue` for auth pages
+- **Layouts**: `AdminLayout.vue` for admin pages, `PublicLayout.vue` for the full-screen home page, `PublicPageLayout.vue` for public content pages (top bar + cream background, e.g. the quote page), `AuthenticatedLayout.vue` for user pages, `GuestLayout.vue` for auth pages
 - **Pages**: Organized by context - `Admin/`, `Public/`, `Auth/`, `Profile/`
 - **Types**: TypeScript interfaces in `resources/js/types/index.d.ts`
 - **Routing**: Ziggy provides Laravel routes to Vue via `route()` helper

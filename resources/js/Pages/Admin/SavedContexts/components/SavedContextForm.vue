@@ -23,11 +23,7 @@ const form = useForm<SavedContextFormData>({
 });
 
 function submit() {
-    if (props.submitMethod === 'post') {
-        form.post(props.submitRoute);
-    } else {
-        form.put(props.submitRoute);
-    }
+    form.submit(props.submitMethod, props.submitRoute);
 }
 </script>
 

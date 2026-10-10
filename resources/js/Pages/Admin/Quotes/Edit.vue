@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import type { Tag, Category, Speaker, Quote, QuoteFormData, QuoteTypeOption, QuoteStatusOption, SourceTypeOption } from '@/types';
+import type { Tag, Category, Subject, Speaker, Quote, QuoteFormData, QuoteTypeOption, QuoteStatusOption, SourceTypeOption } from '@/types';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { formatDate } from '@/lib/utils';
 import QuoteForm from './components/QuoteForm.vue';
+import { ExternalLink } from 'lucide-vue-next';
 
 const props = defineProps<{
     quote: Quote;
     tags: Tag[];
     categories: Category[];
+    subjects: Subject[];
     speakers: Speaker[];
     quoteTypes: QuoteTypeOption[];
     quoteStatuses: QuoteStatusOption[];
@@ -30,6 +32,7 @@ const initialValues: QuoteFormData = {
     status: props.quote.status,
     tags: (props.quote.tags ?? []).map(t => ({ id: t.id, name: t.name })),
     categories: (props.quote.categories ?? []).map(c => ({ id: c.id, name: c.name })),
+    subjects: (props.quote.subjects ?? []).map(s => ({ id: s.id, name: s.name })),
     sources: (props.quote.sources ?? []).map(s => ({
         _key: crypto.randomUUID(),
         url: s.url,
@@ -51,12 +54,23 @@ const initialValues: QuoteFormData = {
                 <h2 class="text-xl font-semibold leading-tight text-foreground">
                     Edit Quote
                 </h2>
-                <Link
-                    :href="route('admin.quotes.index')"
-                    class="text-sm text-muted-foreground hover:text-foreground"
-                >
-                    &larr; Back to Quotes
-                </Link>
+                <div class="flex items-center gap-4">
+                    <a
+                        :href="route('quotes.show', { quote: quote.id, slug: quote.slug })"
+                        target="_blank"
+                        rel="noopener"
+                        class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                    >
+                        View page
+                        <ExternalLink class="size-3.5" aria-hidden="true" />
+                    </a>
+                    <Link
+                        :href="route('admin.quotes.index')"
+                        class="text-sm text-muted-foreground hover:text-foreground"
+                    >
+                        &larr; Back to Quotes
+                    </Link>
+                </div>
             </div>
         </template>
 
@@ -65,6 +79,7 @@ const initialValues: QuoteFormData = {
                 <QuoteForm
                     :tags="tags"
                     :categories="categories"
+                    :subjects="subjects"
                     :speakers="speakers"
                     :quote-types="quoteTypes"
                     :quote-statuses="quoteStatuses"

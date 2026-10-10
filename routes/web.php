@@ -4,8 +4,11 @@ use App\Http\Controllers\Admin\BackgroundController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\QuoteController;
 use App\Http\Controllers\Admin\SavedContextController;
+use App\Http\Controllers\Admin\SubjectController;
+use App\Http\Controllers\Admin\SubjectImageController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuotePageController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +19,12 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Found by ID; QuotePolicy 404s unpublished quotes for everyone but admins
+Route::get('/quotes/{quote}/{slug?}', [QuotePageController::class, 'show'])
+    ->whereNumber('quote')
+    ->can('view', 'quote')
+    ->name('quotes.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +51,12 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('ad
     Route::resource('quotes', QuoteController::class)->except('show');
     Route::patch('/quotes/{quote}/verify', [QuoteController::class, 'toggleVerified'])->name('quotes.verify');
     Route::patch('/quotes/{quote}/feature', [QuoteController::class, 'toggleFeature'])->name('quotes.feature');
+
+    Route::resource('subjects', SubjectController::class)->except('show');
+    Route::post('/subjects/{subject}/images', [SubjectImageController::class, 'store'])->name('subjects.images.store');
+    Route::delete('/subjects/{subject}/images/{image}', [SubjectImageController::class, 'destroy'])
+        ->scopeBindings()
+        ->name('subjects.images.destroy');
 
     Route::resource('backgrounds', BackgroundController::class)->except('show');
 

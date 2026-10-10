@@ -108,6 +108,14 @@ class Quote extends Model
     }
 
     /**
+     * Get the subjects whose full details explain this quote, in the admin's order.
+     */
+    public function subjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class)->withPivot('position')->orderByPivot('position');
+    }
+
+    /**
      * Scope to get only published quotes.
      */
     public function scopePublished(Builder $query): Builder

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Quote;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Random\Engine\Mt19937;
 use Random\Randomizer;
@@ -27,6 +28,10 @@ class QuoteFeedService
     }
 
     /**
+     * Each quote is kept lean for the rotating card: its slug for the quote page link, and
+     * has_full_details, true when a published subject with written full details is linked,
+     * which is when the card shows "Full details →".
+     *
      * @return array{quotes: Collection<int, Quote>, hasMore: bool}
      */
     public function batch(int $seed, int $page): array
@@ -35,9 +40,12 @@ class QuoteFeedService
         $batchIds = array_slice($orderedIds, ($page - 1) * self::BATCH_SIZE, self::BATCH_SIZE);
         $positions = array_flip($batchIds);
 
+        // Columns go in select(), not get(): once withExists() adds its select, get()'s column list is ignored
         $quotes = Quote::with('speaker:id,name')
+            ->select(['id', 'text', 'context', 'occurred_at', 'is_featured', 'speaker_id', 'slug'])
+            ->withExists(['subjects as has_full_details' => fn (Builder $query) => $query->published()->whereNotNull('full_details')])
             ->whereKey($batchIds)
-            ->get(['id', 'text', 'context', 'occurred_at', 'is_featured', 'speaker_id'])
+            ->get()
             ->sortBy(fn (Quote $quote) => $positions[$quote->id])
             ->values();
 
